@@ -1,43 +1,67 @@
 package ui
 
 import (
-	"pc_security_test/tester"
+	"pc_security_test/command"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"github.com/google/uuid"
 )
 
-func initEICARBlock() *fyne.Container {
-	resultOutput := canvas.NewText("Результат", theme.Color(theme.ColorNameForeground))
-	resultOutput.Alignment = fyne.TextAlignCenter
+const (
+	defaultEICARResultOutputText = "Результат"
+	defaultEICARCheckButtonText  = "Тест EICAR"
+)
 
-	checkButton := widget.NewButton("Тест EICAR", func() {
-		onEICARButtonClick(resultOutput)
-	})
+type eicarBlock struct {
+	resultOutput *canvas.Text
+	checkButton  *widget.Button
+}
 
+func newEICARBlock() *eicarBlock {
+	block := &eicarBlock{}
+	block.resultOutput = canvas.NewText(defaultEICARResultOutputText, theme.Color(theme.ColorNameForeground))
+	block.resultOutput.Alignment = fyne.TextAlignCenter
+
+	block.checkButton = widget.NewButton(defaultEICARCheckButtonText, block.onEICARButtonClick)
+
+	return block
+}
+
+func (e *eicarBlock) getContainer() *fyne.Container {
 	connTesting := container.NewGridWithColumns(
-		//layout.NewSpacer(),
 		2,
-		checkButton,
-		resultOutput,
-		//layout.NewSpacer(),
+		e.checkButton,
+		e.resultOutput,
 	)
 
 	return connTesting
 }
-func onEICARButtonClick(c *canvas.Text) {
-	avWorks, err := tester.EICARTest()
-	if err != nil {
-		c.Text = err.Error()
-		c.Color = theme.Color(theme.ColorNameError)
-	} else if avWorks {
-		c.Text = "EICAR-тест пройден успешно. Антивирус работает"
-		c.Color = theme.Color(theme.ColorNameSuccess)
-	} else {
-		c.Text = "EICAR-тест не пройден. Антивирус не работает"
-		c.Color = theme.Color(theme.ColorNameWarning)
-	}
+func (e *eicarBlock) onEICARButtonClick() {
+	go command.AddToQueue(command.EICARRequest{
+		ID: uuid.New(),
+	})
+
+	go e.awaitAndUpdateUI()
+}
+
+func (e *eicarBlock) awaitAndUpdateUI() {
+	eRes := command.AwaitEICARResponse()
+
+	fyne.Do(func() {
+		if eRes.Error != nil {
+			e.resultOutput.Text = eRes.Error.Error()
+			e.resultOutput.Color = theme.Color(theme.ColorNameError)
+		} else if eRes.Passed {
+			e.resultOutput.Text = "EICAR-тест пройден успешно. Антивирус работает"
+			e.resultOutput.Color = theme.Color(theme.ColorNameSuccess)
+		} else {
+			e.resultOutput.Text = "EICAR-тест не пройден. Антивирус не работает"
+			e.resultOutput.Color = theme.Color(theme.ColorNameWarning)
+		}
+		e.resultOutput.Refresh()
+	})
 }

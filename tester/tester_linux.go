@@ -4,26 +4,13 @@
 package tester
 
 import (
-	"os/exec"
+	"pc_security_test/config"
 )
 
-func CheckFWExists() (bool, error) {
-	fwBinaries := []string{"ufw", "iptables", "nft"}
-	for _, fw := range fwBinaries {
-		if _, err := exec.LookPath(fw); err == nil {
-			return true, nil
-		}
-	}
+var (
+	findAVBinariesSlice = config.NewStringSlice("find_av.linux.binaries", []string{})
+	findAVPathsSlice    = config.NewStringSlice("find_av.linux.paths", []string{})
 
-	return false, nil
-}
-
-func CheckAVExists() (bool, error) {
-	avBinaries := []string{"clamscan", "freshclam", "savd", "esets_daemon"}
-	for _, av := range avBinaries {
-		if _, err := exec.LookPath(av); err == nil {
-			return true, nil
-		}
-	}
-	return false, nil
-}
+	findFWBinariesSlice = config.NewStringSlice("find_fw.linux.binaries", []string{})
+	findFWPathsSlice    = config.NewStringSlice("find_fw.linux.paths", []string{})
+)

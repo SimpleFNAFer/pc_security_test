@@ -1,0 +1,31 @@
+queue:
+  worker_num: 5
+
+find_av:
+  linux:
+    binaries:
+      - clamscan
+      - freshclam
+      - savd
+      - esets_daemon
+  darwin:
+    paths:
+      - /Applications/NortonSecurity.app
+      - /Applications/AvastSecurity.app
+      - /Applications/Malwarebytes.app
+
+find_fw:
+  linux:
+    binaries:
+      - iptables
+      - ufw
+      - firewalld
+      - nft
+  darwin:
+    binaries:
+      - pfctl
+      - ipfw
+      - socketfilterfw
+
+eicar:
+  max_parallel: 3

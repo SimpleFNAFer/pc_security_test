@@ -4,23 +4,46 @@
 package tester
 
 import (
+	"maps"
 	"os/exec"
+	"pc_security_test/config"
 	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/yusufpapurcu/wmi"
 )
 
-func CheckFWExists() (bool, error) {
+var (
+	findAVBinariesSlice = config.NewStringSlice("find_av.windows.binaries", []string{})
+	findAVPathsSlice    = config.NewStringSlice("find_av.windows.paths", []string{})
+
+	findFWBinariesSlice = config.NewStringSlice("find_fw.windows.binaries", []string{})
+	findFWPathsSlice    = config.NewStringSlice("find_fw.windows.paths", []string{})
+)
+
+func FindFW() (map[string]string, error) {
+	var (
+		res = make(map[string]string)
+		err error
+	)
+
 	cmd := exec.Command("sc", "query", "MpsSvc")
 	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return false, errors.Wrap(err, "error checking windows firewall")
+	if strings.Contains(string(output), "RUNNING") {
+		res["Брандмауэр Windows"] = ""
 	}
-	return strings.Contains(string(output), "RUNNING"), nil
+
+	found := FindBinariesAndPaths(SourceTypeFW)
+	maps.Copy(res, found)
+
+	return res, err
 }
 
-func CheckAVExists() (bool, error) {
+func FindAV() (map[string]string, error) {
+	var (
+		res = make(map[string]string)
+		err error
+	)
+
 	type AntiVirusProduct struct {
 		DisplayName            string
 		ProductState           uint32
@@ -28,14 +51,14 @@ func CheckAVExists() (bool, error) {
 	}
 
 	var antivirus []AntiVirusProduct
-	err := wmi.Query("SELECT * FROM AntiVirusProduct", &antivirus)
-	if err != nil {
-		return false, errors.Wrap(err, "error querying WMI")
+	err = wmi.Query("SELECT * FROM AntiVirusProduct", &antivirus)
+
+	for _, av := range antivirus {
+		res[av.DisplayName] = av.PathToSignedProductExe
 	}
 
-	if len(antivirus) > 0 {
-		return true, nil
-	}
+	found := FindBinariesAndPaths(SourceTypeAV)
+	maps.Copy(res, found)
 
-	return false, nil
+	return res, err
 }

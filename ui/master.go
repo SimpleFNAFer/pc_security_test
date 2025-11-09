@@ -9,23 +9,28 @@ import (
 func InitMasterWindow(app fyne.App) {
 	mw := app.NewWindow("Проверка защищённости ПК")
 	mw.Resize(fyne.NewSize(800, 600))
+	mw.SetFixedSize(true)
 	mw.SetMaster()
+	mw.Show()
 
-	pingBlock := initPingBlock()
-	fwCheckBlock := initFWCheckBlock()
-	avCheckBlock := initAVCheckBlock()
-	eicarBlock := initEICARBlock()
+	pingBlock := newPingBlock()
+	findFWBlock := newFindFWBlock()
+	testFWBlock := newTestFWBlock()
+	findAVBlock := newFindAVBlock()
+	eicarBlock := newEICARBlock()
+
+	historyBlock := initHistoryBlock(mw)
 
 	mc := container.New(
 		layout.NewVBoxLayout(),
 		layout.NewSpacer(),
-		pingBlock,
-		fwCheckBlock,
-		avCheckBlock,
-		eicarBlock,
+		pingBlock.getContainer(),
+		findFWBlock.getContainer(),
+		testFWBlock.getContainer(),
+		findAVBlock.getContainer(),
+		eicarBlock.getContainer(),
 		layout.NewSpacer(),
+		historyBlock.getContainer(),
 	)
 	mw.SetContent(mc)
-
-	mw.Show()
 }

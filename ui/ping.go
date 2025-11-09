@@ -2,52 +2,84 @@ package ui
 
 import (
 	"fmt"
-	"pc_security_test/tester"
+	"pc_security_test/command"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"github.com/google/uuid"
 )
 
-func initPingBlock() *fyne.Container {
-	hostInput := widget.NewEntry()
-	hostInput.SetPlaceHolder("mail.ru")
+const (
+	defaultHostInputText       = "mail.ru"
+	defaultPingCheckButtonText = "Проверить подключение"
+	defaultResultOutputText    = "Результат"
+)
 
-	resultOutput := canvas.NewText("Результат", theme.Color(theme.ColorNameForeground))
-	resultOutput.Alignment = fyne.TextAlignCenter
-
-	checkButton := widget.NewButton("Проверить подключение", func() {
-		onPingButtonClick(hostInput, resultOutput)
-	})
-
-	connTesting := container.NewGridWithColumns(
-		//layout.NewSpacer(),
-		3,
-		hostInput,
-		checkButton,
-		resultOutput,
-		//layout.NewSpacer(),
-	)
-
-	return connTesting
+type pingBlock struct {
+	hostInput    *widget.Entry
+	checkButton  *widget.Button
+	resultOutput *canvas.Text
 }
 
-func onPingButtonClick(e *widget.Entry, c *canvas.Text) {
-	host := e.Text
+func newPingBlock() *pingBlock {
+	block := &pingBlock{}
+
+	hostInput := widget.NewEntry()
+	hostInput.SetPlaceHolder(defaultHostInputText)
+
+	checkButton := widget.NewButton(defaultPingCheckButtonText, block.onPingButtonClick)
+
+	resultOutput := canvas.NewText(defaultResultOutputText, theme.Color(theme.ColorNameForeground))
+	resultOutput.Alignment = fyne.TextAlignCenter
+
+	block.hostInput = hostInput
+	block.checkButton = checkButton
+	block.resultOutput = resultOutput
+
+	return block
+}
+
+func (b *pingBlock) getContainer() *fyne.Container {
+	return container.NewGridWithColumns(
+		3,
+		b.hostInput,
+		b.checkButton,
+		b.resultOutput,
+	)
+}
+
+func (b *pingBlock) onPingButtonClick() {
+	host := b.hostInput.Text
 	if host == "" {
-		host = "mail.ru"
+		host = defaultHostInputText
 	}
-	avail, err := tester.Ping(host)
-	if err != nil {
-		c.Text = err.Error()
-		c.Color = theme.Color(theme.ColorNameError)
-	} else if avail {
-		c.Text = fmt.Sprintf("Доступ к %s", host)
-		c.Color = theme.Color(theme.ColorNameSuccess)
-	} else {
-		c.Text = fmt.Sprintf("Нет доступа к %s", host)
-		c.Color = theme.Color(theme.ColorNameWarning)
-	}
+
+	go command.AddToQueue(command.PingRequest{
+		ID:   uuid.New(),
+		Host: host,
+	})
+
+	go b.awaitAndUpdateUI()
+}
+
+func (b *pingBlock) awaitAndUpdateUI() {
+	pRes := command.AwaitPingResponse()
+
+	fyne.Do(func() {
+		if pRes.Error != nil {
+			b.resultOutput.Text = pRes.Error.Error()
+			b.resultOutput.Color = theme.Color(theme.ColorNameError)
+		} else if pRes.Available {
+			b.resultOutput.Text = fmt.Sprintf("Доступ к %s", pRes.Host)
+			b.resultOutput.Color = theme.Color(theme.ColorNameSuccess)
+		} else {
+			b.resultOutput.Text = fmt.Sprintf("Нет доступа к %s", pRes.Host)
+			b.resultOutput.Color = theme.Color(theme.ColorNameWarning)
+		}
+
+		b.resultOutput.Refresh()
+	})
 }

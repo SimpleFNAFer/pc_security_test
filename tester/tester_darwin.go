@@ -4,31 +4,13 @@
 package tester
 
 import (
-	"os/exec"
-	"strings"
-
-	"github.com/pkg/errors"
+	"pc_security_test/config"
 )
 
-func CheckFWExists() (bool, error) {
-	cmd := exec.Command("pfctl", "-s", "info")
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return false, errors.Wrap(err, "error checking mac firewall")
-	}
-	return strings.Contains(string(output), "Status: Enabled"), nil
-}
+var (
+	findAVBinariesSlice = config.NewStringSlice("find_av.darwin.binaries", []string{})
+	findAVPathsSlice    = config.NewStringSlice("find_av.darwin.paths", []string{})
 
-func CheckAVExists() (bool, error) {
-	knownAV := []string{
-		"/Applications/NortonSecurity.app",
-		"/Applications/AvastSecurity.app",
-		"/Applications/Malwarebytes.app",
-	}
-	for _, path := range knownAV {
-		if err := exec.Command("test", "-d", path).Run(); err == nil {
-			return true, nil
-		}
-	}
-	return false, nil
-}
+	findFWBinariesSlice = config.NewStringSlice("find_fw.darwin.binaries", []string{})
+	findFWPathsSlice    = config.NewStringSlice("find_fw.darwin.paths", []string{})
+)
