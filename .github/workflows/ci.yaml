@@ -1,0 +1,56 @@
+name: Build Fyne App (Linux, Windows, macOS)
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  build:
+    name: Build for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.24.6"
+
+      - name: Install fyne tool
+        run: go install fyne.io/tools/cmd/fyne@v1.7.0
+
+      - name: Build Windows .exe
+        if: matrix.os == 'windows-latest'
+        run: |
+          fyne package --os windows --source-dir app --icon ..\assets\Icon.png
+          dir
+
+      - name: Build Linux binary
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt update
+          sudo apt install libgl1-mesa-dev xorg-dev libxkbcommon-dev -y
+          fyne package --os linux --source-dir app --icon ../assets/Icon.png
+          ls -la
+
+      - name: Build macOS .app
+        if: matrix.os == 'macos-latest'
+        run: |
+          fyne package --os darwin --source-dir app --icon ../assets/Icon.png
+          ls -la
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.os }}
+          path: |
+            **/*.exe
+            **/*.tar.xz
+            **/*.app
