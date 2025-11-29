@@ -43,8 +43,7 @@ func newPingBlock() *pingBlock {
 }
 
 func (b *pingBlock) getContainer() *fyne.Container {
-	return container.NewGridWithColumns(
-		3,
+	return container.NewVBox(
 		b.hostInput,
 		b.checkButton,
 		b.resultOutput,

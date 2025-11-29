@@ -41,7 +41,7 @@ func initHistoryBlock(master fyne.Window) *historyBlock {
 	block.saveToFileBtn = widget.NewButton(saveToFileBtnText, block.saveToFile)
 	block.clearHistoryBtn = widget.NewButton(clearHistoryBtnText, block.clearHistory)
 
-	sc := container.NewScroll(block.textLines)
+	sc := container.NewVScroll(block.textLines)
 	sc.SetMinSize(fyne.NewSize(0, 200))
 	block.sc = sc
 

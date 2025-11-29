@@ -29,8 +29,7 @@ func newFindFWBlock() *findFWBlock {
 }
 
 func (b *findFWBlock) getContainer() *fyne.Container {
-	connTesting := container.NewGridWithColumns(
-		2,
+	connTesting := container.NewVBox(
 		b.checkButton,
 		b.resultOutput,
 	)
@@ -89,8 +88,7 @@ func newTestFWBlock() *testFWBlock {
 }
 
 func (b *testFWBlock) getContainer() *fyne.Container {
-	return container.NewGridWithColumns(
-		3,
+	return container.NewVBox(
 		b.hostInput,
 		b.checkButton,
 		b.resultOutput,

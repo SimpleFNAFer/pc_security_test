@@ -29,7 +29,7 @@ jobs:
       - name: Build Windows .exe
         if: matrix.os == 'windows-latest'
         run: |
-          fyne package --os windows --source-dir app --icon ..\assets\Icon.png
+          fyne package --os windows --source-dir app --icon assets\Icon.png
           dir
 
       - name: Build Linux binary
@@ -37,13 +37,13 @@ jobs:
         run: |
           sudo apt update
           sudo apt install libgl1-mesa-dev xorg-dev libxkbcommon-dev -y
-          fyne package --os linux --source-dir app --icon ../assets/Icon.png
+          fyne package --os linux --source-dir app --icon assets/Icon.png
           ls -la
 
       - name: Build macOS .app
         if: matrix.os == 'macos-latest'
         run: |
-          fyne package --os darwin --source-dir app --icon ../assets/Icon.png
+          fyne package --os darwin --source-dir app --icon assets/Icon.png
           ls -la
 
       - name: Upload artifact

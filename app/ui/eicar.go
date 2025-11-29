@@ -32,12 +32,10 @@ func newEICARBlock() *eicarBlock {
 }
 
 func (e *eicarBlock) getContainer() *fyne.Container {
-	connTesting := container.NewGridWithColumns(
-		2,
+	connTesting := container.NewVBox(
 		e.checkButton,
 		e.resultOutput,
 	)
-
 	return connTesting
 }
 func (e *eicarBlock) onEICARButtonClick() {

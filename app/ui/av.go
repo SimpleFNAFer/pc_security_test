@@ -28,8 +28,7 @@ func newFindAVBlock() *findAVBlock {
 }
 
 func (b *findAVBlock) getContainer() *fyne.Container {
-	connTesting := container.NewGridWithColumns(
-		2,
+	connTesting := container.NewVBox(
 		b.checkButton,
 		b.resultOutput,
 	)

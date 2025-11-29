@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	a := app.New()
+	a := app.NewWithID("com.sf.pcsecuritycheck")
 
 	command.ProcessQueue()
 
