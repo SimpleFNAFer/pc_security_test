@@ -21,7 +21,7 @@ func InitMasterWindow(app fyne.App) {
 	mw.SetMaster()
 	mw.Show()
 
-	customTheme := initAndSetCustomTheme()
+	initAndSetCustomTheme()
 
 	pingBlock := newPingBlock()
 	findFWBlock := newFindFWBlock()
@@ -65,7 +65,11 @@ func InitMasterWindow(app fyne.App) {
 		)),
 	)
 	mc := container.NewBorder(
-		container.NewHBox(layout.NewSpacer(), widget.NewButtonWithIcon("", theme.ColorPaletteIcon(), customTheme.toggleThemeVariant)),
+		container.NewHBox(
+			widget.NewButtonWithIcon("", theme.SettingsIcon(), OpenPreferencesWindow),
+			layout.NewSpacer(),
+			widget.NewButtonWithIcon("", theme.ColorPaletteIcon(), CT.toggleThemeVariant),
+		),
 		historyBlock.getContainer(), nil, nil,
 		ats,
 	)

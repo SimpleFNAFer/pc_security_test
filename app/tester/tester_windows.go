@@ -6,18 +6,9 @@ package tester
 import (
 	"maps"
 	"os/exec"
-	"pc_security_test/config"
 	"strings"
 
 	"github.com/yusufpapurcu/wmi"
-)
-
-var (
-	findAVBinariesSlice = config.NewStringSlice("find_av.windows.binaries", []string{})
-	findAVPathsSlice    = config.NewStringSlice("find_av.windows.paths", []string{})
-
-	findFWBinariesSlice = config.NewStringSlice("find_fw.windows.binaries", []string{})
-	findFWPathsSlice    = config.NewStringSlice("find_fw.windows.paths", []string{})
 )
 
 func FindFW() (map[string]string, error) {

@@ -1,10 +1,10 @@
 package command
 
-import "pc_security_test/config"
+import (
+	"pc_security_test/preferences"
+)
 
 type request any
-
-var workerNum = config.NewInt("queue.worker_num", 1)
 
 var queue = make(chan request)
 
@@ -35,7 +35,7 @@ func queueWorker() {
 }
 
 func ProcessQueue() {
-	maxNum := workerNum.Get()
+	maxNum, _ := preferences.QueueWorkerNum.Get()
 	for range maxNum {
 		go queueWorker()
 	}

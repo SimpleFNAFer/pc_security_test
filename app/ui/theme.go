@@ -2,37 +2,28 @@ package ui
 
 import (
 	"image/color"
+	"pc_security_test/preferences"
+	"slices"
 
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/theme"
 )
 
-const (
-	prefsKeyTheme        = "theme"
-	prefsValueThemeLight = "light"
-	prefsValueThemeDark  = "dark"
-)
+type customTheme struct{}
 
-type customTheme struct {
-	fyne.Theme
-	isDark bool
-}
+var CT *customTheme
 
-func initAndSetCustomTheme() *customTheme {
-	if fyne.CurrentApp().Preferences().String(prefsKeyTheme) == "" {
-		fyne.CurrentApp().Preferences().SetString(prefsKeyTheme, prefsValueThemeLight)
-	}
-
-	ct := customTheme{
-		isDark: fyne.CurrentApp().Preferences().String(prefsKeyTheme) == prefsValueThemeDark,
-	}
-
-	fyne.CurrentApp().Settings().SetTheme(&ct)
-	return &ct
+func initAndSetCustomTheme() {
+	CT = &customTheme{}
+	preferences.AppearanceTheme.AddListener(binding.NewDataListener(func() {
+		fyne.CurrentApp().Settings().SetTheme(CT)
+	}))
 }
 
 func (ct *customTheme) Color(tcn fyne.ThemeColorName, tv fyne.ThemeVariant) color.Color {
-	if ct.isDark {
+	t, _ := preferences.AppearanceTheme.Get()
+	if t == preferences.AppearanceThemeDark {
 		return theme.DefaultTheme().Color(tcn, theme.VariantDark)
 	}
 	return theme.DefaultTheme().Color(tcn, theme.VariantLight)
@@ -51,11 +42,10 @@ func (ct *customTheme) Size(tsn fyne.ThemeSizeName) float32 {
 }
 
 func (ct *customTheme) toggleThemeVariant() {
-	ct.isDark = !ct.isDark
-	variant := prefsValueThemeLight
-	if ct.isDark {
-		variant = prefsValueThemeDark
-	}
-	fyne.CurrentApp().Preferences().SetString(prefsKeyTheme, variant)
-	fyne.CurrentApp().Settings().SetTheme(ct)
+	avail := preferences.AvailableAppearanceTheme()
+	t, _ := preferences.AppearanceTheme.Get()
+	ti := slices.Index(avail, t)
+	newTI := (ti - 1 + len(avail)) % len(avail)
+	newT := avail[newTI]
+	preferences.AppearanceTheme.Set(newT)
 }

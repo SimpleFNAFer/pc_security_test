@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"pc_security_test/config"
+	"pc_security_test/preferences"
 	"sync"
 	"time"
 
@@ -73,11 +73,11 @@ func FindBinariesAndPaths(st sourceType) map[string]string {
 
 	switch st {
 	case SourceTypeFW:
-		binaries = findFWBinariesSlice.Get()
-		paths = findFWPathsSlice.Get()
+		binaries, _ = preferences.FWBinaries.Get()
+		paths, _ = preferences.FWFilePaths.Get()
 	case SourceTypeAV:
-		binaries = findAVBinariesSlice.Get()
-		paths = findAVPathsSlice.Get()
+		binaries, _ = preferences.AVBinaries.Get()
+		paths, _ = preferences.AVFilePaths.Get()
 	}
 
 	binariesFound := findBinariesPaths(binaries)
@@ -89,8 +89,6 @@ func FindBinariesAndPaths(st sourceType) map[string]string {
 }
 
 var (
-	maxParallelEICARTests = config.NewInt("eicar.max_parallel", 1)
-
 	eicarCounterMu         = &sync.RWMutex{}
 	currParallelEICARTests = 0
 )
@@ -98,7 +96,7 @@ var (
 func checkMaxParallelEICARTests() error {
 	eicarCounterMu.RLock()
 	defer eicarCounterMu.RUnlock()
-	if currParallelEICARTests > maxParallelEICARTests.Get() {
+	if m, _ := preferences.EICARMaxParallel.Get(); currParallelEICARTests > m {
 		return errors.New("Дождитесь завершения предыдущего EICAR теста")
 	}
 	return nil
