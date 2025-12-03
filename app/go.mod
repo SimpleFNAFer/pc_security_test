@@ -8,7 +8,6 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-community/pro-bing v0.7.0
 	github.com/yusufpapurcu/wmi v1.2.4
-	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -45,4 +44,5 @@ require (
 	golang.org/x/sync v0.17.0 // indirect
 	golang.org/x/sys v0.37.0 // indirect
 	golang.org/x/text v0.30.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

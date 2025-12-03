@@ -15,22 +15,21 @@ import (
 
 const (
 	preferencesWindowTitle = "Настройки"
-
-	appearanceTitle       = "## Оформление"
-	appearanceThemeTitle  = "Тема"
-	queueWorkerNumTitle   = "Количество параллельно запущенных обработчиков"
-	eicarMaxParallelTitle = "Маскимальное количество одновременных EICAR-тестов"
-
-	avTitle        = "## Антивирус"
-	fwTitle        = "## Межсетевой экран"
-	binariesTitle  = "Бинарные файлы"
-	filepathsTitle = "Файловые пути"
+	commonTitle            = "## Общие"
+	appearanceThemeTitle   = "Тема"
+	queueWorkerNumTitle    = "Количество параллельно запущенных обработчиков"
+	eicarMaxParallelTitle  = "Маскимальное количество одновременных EICAR-тестов"
+	netTitle               = "## Сеть"
+	defaultHostTitle       = "Адрес по умолчанию"
+	avTitle                = "## Антивирус"
+	fwTitle                = "## Межсетевой экран"
+	binariesTitle          = "Бинарные файлы"
+	filepathsTitle         = "Файловые пути"
 )
 
 func OpenPreferencesWindow() {
 	pw := fyne.CurrentApp().NewWindow(preferencesWindowTitle)
 	pw.Resize(fyne.NewSize(400, 800))
-	pw.SetFixedSize(true)
 
 	appearanceTheme := widget.NewSelectWithData(preferences.AvailableAppearanceTheme(), preferences.AppearanceTheme)
 	appearanceThemeBlock := container.NewHBox(
@@ -39,7 +38,7 @@ func OpenPreferencesWindow() {
 	)
 
 	queueWorkerNum := widget.NewSliderWithData(
-		preferences.QueueWorkerNumMin,
+		float64(preferences.QueueWorkerNumMin),
 		float64(preferences.QueueWorkerNumMax),
 		binding.IntToFloat(preferences.QueueWorkerNum),
 	)
@@ -50,9 +49,16 @@ func OpenPreferencesWindow() {
 		sliderLegend(preferences.QueueWorkerNumMin, preferences.QueueWorkerNumMax),
 	)
 
+	pingDefaultHost := widget.NewEntryWithData(preferences.PingDefaultHost)
+	pingBlock := container.NewBorder(
+		widget.NewLabel(defaultHostTitle),
+		pingDefaultHost,
+		nil, nil, nil,
+	)
+
 	eicarMaxParallel := widget.NewSliderWithData(
-		preferences.EICARMaxParallelMin,
-		preferences.EICARMaxParallelMax,
+		float64(preferences.EICARMaxParallelMin),
+		float64(preferences.EICARMaxParallelMax),
 		binding.IntToFloat(preferences.EICARMaxParallel),
 	)
 	eicarMaxParallel.Step = 1
@@ -70,6 +76,8 @@ func OpenPreferencesWindow() {
 	)
 	avBlock := container.NewVBox(
 		widget.NewRichTextFromMarkdown(avTitle),
+		eicarMaxParallelBlock,
+		widget.NewSeparator(),
 		avTabs,
 		widget.NewSeparator(),
 	)
@@ -86,29 +94,24 @@ func OpenPreferencesWindow() {
 		widget.NewSeparator(),
 	)
 
-	avFW := container.NewVBox(avBlock, fwBlock)
-
 	scroll := container.NewVScroll(
 		container.NewVBox(
-			container.NewVBox(
-				widget.NewRichTextFromMarkdown(appearanceTitle),
-				appearanceThemeBlock,
-				widget.NewSeparator(),
-				queueWorkerNumBlock,
-				widget.NewSeparator(),
-				eicarMaxParallelBlock,
-				widget.NewSeparator(),
-			),
-			//nil, nil, nil,
-			//avBinariesBlock,
-			avFW,
+			widget.NewRichTextFromMarkdown(commonTitle),
+			appearanceThemeBlock,
+			widget.NewSeparator(),
+			queueWorkerNumBlock,
+			widget.NewSeparator(),
+			widget.NewRichTextFromMarkdown(netTitle),
+			pingBlock,
+			widget.NewSeparator(),
+			avBlock,
+			fwBlock,
 		),
 	)
 	scroll.SetMinSize(fyne.NewSize(400, 800))
-	content := container.NewHBox(scroll)
 
 	pw.CenterOnScreen()
-	pw.SetContent(content)
+	pw.SetContent(scroll)
 	pw.Show()
 }
 
@@ -116,11 +119,9 @@ func sliderLegend(min, max int) *fyne.Container {
 	objects := []fyne.CanvasObject{}
 	for i := min; i < max; i++ {
 		l := widget.NewLabel(fmt.Sprintf("%d", i))
-		l.SizeName = theme.SizeNameCaptionText
 		objects = append(objects, l, layout.NewSpacer())
 	}
 	l := widget.NewLabel(fmt.Sprintf("%d", max))
-	l.SizeName = theme.SizeNameCaptionText
 	objects = append(objects, l)
 
 	return container.NewHBox(objects...)
@@ -163,7 +164,7 @@ func stringListBlock(strList binding.StringList) *fyne.Container {
 		rmBtn.Enable()
 	}
 	scroll := container.NewVScroll(list)
-	scroll.SetMinSize(fyne.NewSize(400, 200))
+	scroll.SetMinSize(fyne.NewSize(400, 160))
 	block := container.NewBorder(
 		panel, nil, nil, nil, scroll,
 	)

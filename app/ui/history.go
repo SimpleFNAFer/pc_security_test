@@ -21,7 +21,7 @@ const (
 type historyBlock struct {
 	master fyne.Window
 
-	textLines       *widget.TextGrid
+	textLines       *widget.Label
 	saveToFileBtn   *widget.Button
 	clearHistoryBtn *widget.Button
 	sc              *container.Scroll
@@ -34,15 +34,15 @@ func initHistoryBlock(master fyne.Window) *historyBlock {
 
 	block := &historyBlock{
 		master:    master,
-		textLines: widget.NewTextGrid(),
+		textLines: widget.NewLabel(""),
 	}
 
-	block.textLines.ShowLineNumbers = true
+	block.textLines.Wrapping = fyne.TextWrapBreak
 	block.saveToFileBtn = widget.NewButton(saveToFileBtnText, block.saveToFile)
 	block.clearHistoryBtn = widget.NewButton(clearHistoryBtnText, block.clearHistory)
 
 	sc := container.NewVScroll(block.textLines)
-	sc.SetMinSize(fyne.NewSize(0, 200))
+	sc.SetMinSize(fyne.NewSize(0, 300))
 	block.sc = sc
 
 	return block
@@ -54,7 +54,7 @@ func (h *historyBlock) getContainer() *fyne.Container {
 		h.clearHistoryBtn,
 	)
 
-	c := container.NewVBox(h.sc, layout.NewSpacer(), buttons)
+	c := container.NewVBox(widget.NewSeparator(), h.sc, layout.NewSpacer(), buttons)
 
 	go h.awaitHistoryEntries()
 
@@ -65,7 +65,7 @@ func (h *historyBlock) awaitHistoryEntries() {
 	for e := range command.HistoryEntries() {
 		timestamp := e.Timestamp.Format("01-02-2006 15:04:05")
 		fyne.DoAndWait(func() {
-			h.textLines.Append(fmt.Sprintf("%s\t|\t%s", timestamp, e.Value))
+			h.textLines.SetText(fmt.Sprintf("%s\n%s\t|\t%s", h.textLines.Text, timestamp, e.Value))
 			h.textLines.Refresh()
 			h.sc.ScrollToBottom()
 			h.sc.Refresh()
@@ -74,7 +74,7 @@ func (h *historyBlock) awaitHistoryEntries() {
 }
 
 func (h *historyBlock) saveToFile() {
-	textBytes := []byte(h.textLines.Text())
+	textBytes := []byte(h.textLines.Text)
 
 	dialog.ShowFileSave(func(writer fyne.URIWriteCloser, err error) {
 		if err != nil || writer == nil {
@@ -92,6 +92,6 @@ func (h *historyBlock) saveToFile() {
 }
 
 func (h *historyBlock) clearHistory() {
-	h.textLines.Rows = nil
+	h.textLines.SetText("")
 	h.textLines.Refresh()
 }

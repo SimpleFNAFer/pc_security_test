@@ -29,13 +29,17 @@ func CheckInitAppPrefs(a fyne.App) {
 
 	// queue.worker_num
 	checkInitIntInAppPrefs(
-		a, queueWorkerNumKey, queueWorkerNumDefVal, QueueWorkerNumMin, QueueWorkerNumMax,
+		a, queueWorkerNumKey, queueWorkerNumDefVal, &QueueWorkerNumMin, &QueueWorkerNumMax,
 	)
 	QueueWorkerNum = binding.BindPreferenceInt(queueWorkerNumKey, a.Preferences())
 
+	// ping.default_host
+	checkInitStringInAppPrefs(a, pingDefaultHostKey, pingDefaultHostDefVal)
+	PingDefaultHost = binding.BindPreferenceString(pingDefaultHostKey, a.Preferences())
+
 	// eicar.max_parallel
 	checkInitIntInAppPrefs(
-		a, eicarMaxParallelKey, eicarMaxParallelDefVal, EICARMaxParallelMin, EICARMaxParallelMax,
+		a, eicarMaxParallelKey, eicarMaxParallelDefVal, &EICARMaxParallelMin, &EICARMaxParallelMax,
 	)
 	EICARMaxParallel = binding.BindPreferenceInt(eicarMaxParallelKey, a.Preferences())
 
@@ -66,13 +70,13 @@ func CheckInitAppPrefs(a fyne.App) {
 
 func checkInitStringInAppPrefs(a fyne.App, k, defV string, avail ...string) {
 	v := a.Preferences().StringWithFallback(k, stringFallback)
-	if v == stringFallback || !slices.Contains(avail, v) {
+	if v == stringFallback || len(avail) != 0 && !slices.Contains(avail, v) {
 		fyne.CurrentApp().Preferences().SetString(k, defV)
 	}
 }
-func checkInitIntInAppPrefs(a fyne.App, k string, defV, min, max int) {
+func checkInitIntInAppPrefs(a fyne.App, k string, defV int, min, max *int) {
 	v := a.Preferences().IntWithFallback(k, intFallback)
-	if v == intFallback || v < min || v > max {
+	if v == intFallback || min != nil && v < *min || max != nil && v > *max {
 		fyne.CurrentApp().Preferences().SetInt(k, defV)
 	}
 }
@@ -101,47 +105,46 @@ const (
 	appearanceThemeKey    = "appearance.theme"
 	AppearanceThemeLight  = "light"
 	AppearanceThemeDark   = "dark"
-	appearanceThemeDefVal = AppearanceThemeLight
+	appearanceThemeDefVal = AppearanceThemeDark
 )
 
-var (
-	AppearanceTheme binding.String
-)
+var AppearanceTheme binding.String
 
 func AvailableAppearanceTheme() []string {
 	return []string{AppearanceThemeLight, AppearanceThemeDark}
 }
 
 // queue.worker_num
-const (
-	queueWorkerNumKey    = "queue.worker_num"
-	QueueWorkerNumMin    = 1
-	queueWorkerNumDefVal = QueueWorkerNumMin
-)
+const queueWorkerNumKey = "queue.worker_num"
 
 var (
-	QueueWorkerNumMax = func() int {
+	QueueWorkerNumMin    = 1
+	queueWorkerNumDefVal = QueueWorkerNumMin
+	QueueWorkerNumMax    = func() int {
 		if runtime.NumCPU() > 16 {
 			return 16
 		}
 		return runtime.NumCPU()
 	}()
-)
-
-var (
 	QueueWorkerNum binding.Int
 )
 
-// eicar.max_parallel
+// ping.default_host
 const (
-	eicarMaxParallelKey    = "eicar.max_parallel"
+	pingDefaultHostKey    = "ping.default_host"
+	pingDefaultHostDefVal = "mail.ru"
+)
+
+var PingDefaultHost binding.String
+
+// eicar.max_parallel
+const eicarMaxParallelKey = "eicar.max_parallel"
+
+var (
 	EICARMaxParallelMin    = 1
 	EICARMaxParallelMax    = 5
 	eicarMaxParallelDefVal = EICARMaxParallelMin
-)
-
-var (
-	EICARMaxParallel binding.Int
+	EICARMaxParallel       binding.Int
 )
 
 // av.binaries

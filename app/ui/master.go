@@ -17,7 +17,6 @@ const (
 func InitMasterWindow(app fyne.App) {
 	mw := app.NewWindow("Проверка защищённости ПК")
 	mw.Resize(fyne.NewSize(800, 800))
-	mw.SetFixedSize(true)
 	mw.SetMaster()
 	mw.Show()
 
