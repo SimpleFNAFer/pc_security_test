@@ -68,17 +68,17 @@ func (b *pingBlock) awaitAndUpdateUI() {
 	pRes := command.AwaitPingResponse()
 
 	fyne.Do(func() {
-		if pRes.Error != nil {
+		switch {
+		case pRes.Error != nil:
 			b.resultOutput.Text = pRes.Error.Error()
 			b.resultOutput.Color = theme.Color(theme.ColorNameError)
-		} else if pRes.Available {
+		case pRes.Available:
 			b.resultOutput.Text = fmt.Sprintf("Доступ к %s", pRes.Host)
 			b.resultOutput.Color = theme.Color(theme.ColorNameSuccess)
-		} else {
+		default:
 			b.resultOutput.Text = fmt.Sprintf("Нет доступа к %s", pRes.Host)
 			b.resultOutput.Color = theme.Color(theme.ColorNameWarning)
 		}
-
 		b.resultOutput.Refresh()
 	})
 }

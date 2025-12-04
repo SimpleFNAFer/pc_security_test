@@ -81,7 +81,7 @@ func (h *historyBlock) saveToFile() {
 			return
 		}
 
-		defer writer.Close()
+		defer fyne.LogError("error closing writer", writer.Close())
 
 		_, writeErr := writer.Write(textBytes)
 		if writeErr != nil {

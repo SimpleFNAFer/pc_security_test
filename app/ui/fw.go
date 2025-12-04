@@ -42,20 +42,20 @@ func (b *findFWBlock) onFWCheckButtonClick() {
 	})
 
 	go b.awaitAndUpdateUI()
-
 }
 
 func (b *findFWBlock) awaitAndUpdateUI() {
 	res := command.AwaitFindFWResponse()
 
 	fyne.Do(func() {
-		if res.Error != nil {
+		switch {
+		case res.Error != nil:
 			b.resultOutput.Text = res.Error.Error()
 			b.resultOutput.Color = theme.Color(theme.ColorNameError)
-		} else if len(res.Found) > 0 {
+		case len(res.Found) > 0:
 			b.resultOutput.Text = "Межсетевой экран найден"
 			b.resultOutput.Color = theme.Color(theme.ColorNameSuccess)
-		} else {
+		default:
 			b.resultOutput.Text = "Межсетевой экран не найден"
 			b.resultOutput.Color = theme.Color(theme.ColorNameWarning)
 		}
@@ -113,17 +113,17 @@ func (b *testFWBlock) awaitAndUpdateUI() {
 	pRes := command.AwaitTestFWResponse()
 
 	fyne.Do(func() {
-		if pRes.Error != nil {
+		switch {
+		case pRes.Error != nil:
 			b.resultOutput.Text = pRes.Error.Error()
 			b.resultOutput.Color = theme.Color(theme.ColorNameError)
-		} else if !pRes.Available {
+		case !pRes.Available:
 			b.resultOutput.Text = fmt.Sprintf("МЭ активен, нет доступа к %s", pRes.Host)
 			b.resultOutput.Color = theme.Color(theme.ColorNameSuccess)
-		} else {
+		default:
 			b.resultOutput.Text = fmt.Sprintf("МЭ не активен, есть доступ к %s", pRes.Host)
 			b.resultOutput.Color = theme.Color(theme.ColorNameWarning)
 		}
-
 		b.resultOutput.Refresh()
 	})
 }

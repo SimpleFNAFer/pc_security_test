@@ -40,17 +40,17 @@ func eicarRequestToHistoryEntry(eReq EICARRequest) Entry {
 }
 
 func eicarResponseToHistoryEntry(eRes EICARResponse) Entry {
-	passStr := "тест пройден"
+	resStr := "тест пройден"
 	errStr := "успешное выполнение"
 	if !eRes.Passed {
-		passStr = "тест не пройден"
+		resStr = "тест не пройден"
 	}
 	if eRes.Error != nil {
 		errStr = fmt.Sprintf("ошибка: %s", eRes.Error.Error())
 	}
 	return Entry{
 		Timestamp: time.Now(),
-		Value:     fmt.Sprintf("%s\t|\tРезультат: %s; %s", eRes.ID.String(), passStr, errStr),
+		Value:     fmt.Sprintf("%s\t|\tРезультат: %s; %s", eRes.ID.String(), resStr, errStr),
 	}
 }
 

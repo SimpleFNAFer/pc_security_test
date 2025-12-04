@@ -31,37 +31,47 @@ func InitMasterWindow(app fyne.App) {
 	historyBlock := initHistoryBlock(mw)
 
 	ats := container.NewAppTabs(
-		container.NewTabItem(navPingBtnLabel, container.NewVBox(
-			layout.NewSpacer(),
-			container.NewHBox(
-				layout.NewSpacer(),
+		container.NewTabItem(
+			navPingBtnLabel,
+			container.New(
+				layout.CustomPaddedLayout{
+					TopPadding:    100,
+					BottomPadding: 100,
+					LeftPadding:   200,
+					RightPadding:  200,
+				},
 				pingBlock.getContainer(),
-				layout.NewSpacer(),
-			),
-			layout.NewSpacer(),
-		)),
-		container.NewTabItem(navAVBtnLabel, container.NewVBox(
-			layout.NewSpacer(),
-			container.NewHBox(
-				layout.NewSpacer(),
-				findAVBlock.getContainer(),
-				layout.NewSpacer(),
-				eicarBlock.getContainer(),
-				layout.NewSpacer(),
-			),
-			layout.NewSpacer(),
-		)),
-		container.NewTabItem(navFWBtnLabel, container.NewVBox(
-			layout.NewSpacer(),
-			container.NewHBox(
-				layout.NewSpacer(),
-				findFWBlock.getContainer(),
-				layout.NewSpacer(),
-				testFWBlock.getContainer(),
-				layout.NewSpacer(),
-			),
-			layout.NewSpacer(),
-		)),
+			)),
+		container.NewTabItem(
+			navAVBtnLabel,
+			container.New(
+				layout.CustomPaddedLayout{
+					TopPadding:    100,
+					BottomPadding: 100,
+					LeftPadding:   200,
+					RightPadding:  200,
+				},
+				container.NewHBox(
+					findAVBlock.getContainer(),
+					layout.NewSpacer(),
+					eicarBlock.getContainer(),
+				),
+			)),
+		container.NewTabItem(
+			navFWBtnLabel,
+			container.New(
+				layout.CustomPaddedLayout{
+					TopPadding:    100,
+					BottomPadding: 100,
+					LeftPadding:   200,
+					RightPadding:  200,
+				},
+				container.NewHBox(
+					findFWBlock.getContainer(),
+					layout.NewSpacer(),
+					testFWBlock.getContainer(),
+				),
+			)),
 	)
 	mc := container.NewBorder(
 		container.NewHBox(

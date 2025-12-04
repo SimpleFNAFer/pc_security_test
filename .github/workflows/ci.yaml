@@ -26,24 +26,35 @@ jobs:
       - name: Install fyne tool
         run: go install fyne.io/tools/cmd/fyne@v1.7.0
 
-      - name: Build Windows .exe
-        if: matrix.os == 'windows-latest'
-        run: |
-          fyne package --os windows --source-dir app --icon assets\Icon.png
-          dir
-
-      - name: Build Linux binary
+      - name: Install Linux dependencies
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt update
           sudo apt install libgl1-mesa-dev xorg-dev libxkbcommon-dev -y
-          fyne package --os linux --source-dir app --icon assets/Icon.png
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v9.2.0
+        with:
+          version: v2.6.2
+          args: --verbose --timeout=10m
+          working-directory: ./app
+
+      - name: Package Windows .exe
+        if: matrix.os == 'windows-latest'
+        run: |
+          fyne package --os windows --source-dir app --icon assets\Icon.png --release --app-id com.sf.pcsecuritycheck
+          dir app
+
+      - name: Package Linux binary
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          fyne package --os linux --source-dir app --icon assets/Icon.png --release
           ls -la
 
-      - name: Build macOS .app
+      - name: Package macOS .app
         if: matrix.os == 'macos-latest'
         run: |
-          fyne package --os darwin --source-dir app --icon assets/Icon.png
+          fyne package --os darwin --source-dir app --icon assets/Icon.png --release
           ls -la
 
       - name: Upload artifact
@@ -51,6 +62,31 @@ jobs:
         with:
           name: build-${{ matrix.os }}
           path: |
+            **/*.exe
+            **/*.tar.xz
+            **/*.app
+
+  release:
+    if: github.ref_type == 'tag'
+    needs: build
+
+    name: Release for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v6
+        with:
+          name: build-${{ matrix.os }}
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
             **/*.exe
             **/*.tar.xz
             **/*.app

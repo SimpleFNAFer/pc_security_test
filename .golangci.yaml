@@ -1,0 +1,33 @@
+version: "2"
+
+run:
+  timeout: 10m
+  tests: true
+
+linters:
+  enable:
+    - govet
+    - staticcheck
+    - unused
+    - ineffassign
+    - asciicheck
+    - godox
+    - gosec
+    - gosmopolitan
+    - lll
+    - misspell
+    - unparam
+    - wastedassign
+    - whitespace
+    - revive
+    - gocritic
+    - unconvert
+    - prealloc
+    - makezero
+    - dupl
+
+  settings:
+    revive:
+      rules:
+        - name: exported
+          disabled: true

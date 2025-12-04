@@ -95,17 +95,23 @@ func OpenPreferencesWindow() {
 	)
 
 	scroll := container.NewVScroll(
-		container.NewVBox(
-			widget.NewRichTextFromMarkdown(commonTitle),
-			appearanceThemeBlock,
-			widget.NewSeparator(),
-			queueWorkerNumBlock,
-			widget.NewSeparator(),
-			widget.NewRichTextFromMarkdown(netTitle),
-			pingBlock,
-			widget.NewSeparator(),
-			avBlock,
-			fwBlock,
+		container.New(
+			layout.CustomPaddedLayout{
+				LeftPadding:  50,
+				RightPadding: 50,
+			},
+			container.NewVBox(
+				widget.NewRichTextFromMarkdown(commonTitle),
+				appearanceThemeBlock,
+				widget.NewSeparator(),
+				queueWorkerNumBlock,
+				widget.NewSeparator(),
+				widget.NewRichTextFromMarkdown(netTitle),
+				pingBlock,
+				widget.NewSeparator(),
+				avBlock,
+				fwBlock,
+			),
 		),
 	)
 	scroll.SetMinSize(fyne.NewSize(400, 800))
@@ -140,7 +146,7 @@ func stringListBlock(strList binding.StringList) *fyne.Container {
 		text := entry.Text
 		strSlice, _ := strList.Get()
 		if text != "" && !slices.Contains(strSlice, text) {
-			strList.Append(text)
+			fyne.LogError("error appending to the list", strList.Append(text))
 		}
 		entry.SetText("")
 	})
@@ -148,7 +154,7 @@ func stringListBlock(strList binding.StringList) *fyne.Container {
 		text := entry.Text
 		strSlice, _ := strList.Get()
 		if text != "" && slices.Contains(strSlice, text) {
-			strList.Remove(text)
+			fyne.LogError("error removing from the list", strList.Remove(text))
 		}
 		entry.SetText("")
 		list.UnselectAll()

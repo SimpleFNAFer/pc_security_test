@@ -127,7 +127,7 @@ func EICARTest() (bool, error) {
 	eicar := `X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*`
 	testFile := fmt.Sprintf("eicar-%s.txt", uuid.New().String())
 
-	err := os.WriteFile(testFile, []byte(eicar), 0644)
+	err := os.WriteFile(testFile, []byte(eicar), 0600)
 	if err != nil {
 		return false, errors.Wrap(err, "error creating file")
 	}

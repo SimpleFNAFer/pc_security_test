@@ -1,5 +1,4 @@
 //go:build windows
-// +build windows
 
 package tester
 
@@ -42,7 +41,7 @@ func FindAV() (map[string]string, error) {
 	}
 
 	var antivirus []AntiVirusProduct
-	err = wmi.Query("SELECT * FROM AntiVirusProduct", &antivirus)
+	err = wmi.Query("SELECT * FROM AntivirusProduct", &antivirus)
 
 	for _, av := range antivirus {
 		res[av.DisplayName] = av.PathToSignedProductExe

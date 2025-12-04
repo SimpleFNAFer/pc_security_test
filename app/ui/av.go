@@ -11,6 +11,8 @@ import (
 	"github.com/google/uuid"
 )
 
+var ()
+
 type findAVBlock struct {
 	resultOutput *canvas.Text
 	checkButton  *widget.Button
@@ -42,20 +44,20 @@ func (b *findAVBlock) onAVCheckButtonClick() {
 	})
 
 	go b.awaitAndUpdateUI()
-
 }
 
 func (b *findAVBlock) awaitAndUpdateUI() {
 	res := command.AwaitFindAVResponse()
 
 	fyne.Do(func() {
-		if res.Error != nil {
+		switch {
+		case res.Error != nil:
 			b.resultOutput.Text = res.Error.Error()
 			b.resultOutput.Color = theme.Color(theme.ColorNameError)
-		} else if len(res.Found) > 0 {
+		case len(res.Found) > 0:
 			b.resultOutput.Text = "Антивирус найден"
 			b.resultOutput.Color = theme.Color(theme.ColorNameSuccess)
-		} else {
+		default:
 			b.resultOutput.Text = "Антивирус не найден"
 			b.resultOutput.Color = theme.Color(theme.ColorNameWarning)
 		}

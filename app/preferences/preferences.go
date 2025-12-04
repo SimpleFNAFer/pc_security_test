@@ -4,6 +4,7 @@ import (
 	"errors"
 	"runtime"
 	"slices"
+	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/data/binding"
@@ -43,6 +44,11 @@ func CheckInitAppPrefs(a fyne.App) {
 	)
 	EICARMaxParallel = binding.BindPreferenceInt(eicarMaxParallelKey, a.Preferences())
 
+	// eicar.wait_duration
+	checkInitDurationInAppPrefs(
+		a, eicarWaitDurationKey, eicarWaitDurationDefVal, &EICARWaitDurationMin, &EICARWaitDurationMax,
+	)
+
 	// av.binaries
 	checkInitStringSliceInAppPrefs(
 		a, avBinariesKey, avBinariesDefVal,
@@ -71,20 +77,30 @@ func CheckInitAppPrefs(a fyne.App) {
 func checkInitStringInAppPrefs(a fyne.App, k, defV string, avail ...string) {
 	v := a.Preferences().StringWithFallback(k, stringFallback)
 	if v == stringFallback || len(avail) != 0 && !slices.Contains(avail, v) {
-		fyne.CurrentApp().Preferences().SetString(k, defV)
+		a.Preferences().SetString(k, defV)
 	}
 }
 func checkInitIntInAppPrefs(a fyne.App, k string, defV int, min, max *int) {
 	v := a.Preferences().IntWithFallback(k, intFallback)
 	if v == intFallback || min != nil && v < *min || max != nil && v > *max {
-		fyne.CurrentApp().Preferences().SetInt(k, defV)
+		a.Preferences().SetInt(k, defV)
 	}
 }
 func checkInitStringSliceInAppPrefs(a fyne.App, k string, defV []string) {
 	v := a.Preferences().StringListWithFallback(k, stringSliceFallback)
 
 	if slicesEqual(v, stringSliceFallback) {
-		fyne.CurrentApp().Preferences().SetStringList(k, defV)
+		a.Preferences().SetStringList(k, defV)
+	}
+}
+func checkInitDurationInAppPrefs(a fyne.App, k string, defV time.Duration, min, max *time.Duration) {
+	v := a.Preferences().StringWithFallback(k, stringFallback)
+	dur, err := time.ParseDuration(v)
+	if v == stringFallback ||
+		err != nil ||
+		min != nil && dur < *min ||
+		max != nil && dur > *max {
+		a.Preferences().SetString(k, defV.String())
 	}
 }
 
@@ -145,6 +161,16 @@ var (
 	EICARMaxParallelMax    = 5
 	eicarMaxParallelDefVal = EICARMaxParallelMin
 	EICARMaxParallel       binding.Int
+)
+
+// eicar.wait_duration
+const eicarWaitDurationKey = "eicar.wait_duration"
+
+var (
+	EICARWaitDurationMin    = 5 * time.Second
+	EICARWaitDurationMax    = 20 * time.Second
+	eicarWaitDurationDefVal = 10 * time.Second
+	EICARWaitDuration       binding.String
 )
 
 // av.binaries

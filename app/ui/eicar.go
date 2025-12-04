@@ -50,13 +50,14 @@ func (e *eicarBlock) awaitAndUpdateUI() {
 	eRes := command.AwaitEICARResponse()
 
 	fyne.Do(func() {
-		if eRes.Error != nil {
+		switch {
+		case eRes.Error != nil:
 			e.resultOutput.Text = eRes.Error.Error()
 			e.resultOutput.Color = theme.Color(theme.ColorNameError)
-		} else if eRes.Passed {
+		case eRes.Passed:
 			e.resultOutput.Text = "EICAR-тест пройден успешно. Антивирус работает"
 			e.resultOutput.Color = theme.Color(theme.ColorNameSuccess)
-		} else {
+		default:
 			e.resultOutput.Text = "EICAR-тест не пройден. Антивирус не работает"
 			e.resultOutput.Color = theme.Color(theme.ColorNameWarning)
 		}
