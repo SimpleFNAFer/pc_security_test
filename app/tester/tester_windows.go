@@ -41,7 +41,10 @@ func FindAV() (map[string]string, error) {
 	}
 
 	var antivirus []AntiVirusProduct
-	err = wmi.Query("SELECT * FROM AntivirusProduct", &antivirus)
+	err = wmi.QueryNamespace("SELECT * FROM AntivirusProduct", &antivirus, "root\\SecurityCenter2")
+	if err != nil {
+		err = wmi.QueryNamespace("SELECT * FROM AntivirusProduct", &antivirus, "root\\SecurityCenter")
+	}
 
 	for _, av := range antivirus {
 		res[av.DisplayName] = av.PathToSignedProductExe
