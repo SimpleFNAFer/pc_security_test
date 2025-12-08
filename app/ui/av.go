@@ -2,65 +2,60 @@ package ui
 
 import (
 	"pc_security_test/command"
+	"pc_security_test/preferences"
 
 	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/google/uuid"
 )
 
-var ()
+const (
+	avSearchTitle = "## Проверка наличия антивируса"
+	avSearchDesc  = `
+Данный раздел предназначен для поиска исполняемых файлов (в PATH), а также файловых путей.
+
+Список доступных для поиска файлов и путей можно отредактировать в настройках в разделе "Антивирус".
+
+Для начала поиска нажмите "Поиск". Найденные и не найденные объекты подсветятся соответствующими цветами.
+Для сброса результатов нажмите "Сбросить"
+	`
+)
 
 type findAVBlock struct {
-	resultOutput *canvas.Text
-	checkButton  *widget.Button
+	sb *searchBlock
 }
 
-func newFindAVBlock() *findAVBlock {
+func newSearchAVBlock() *findAVBlock {
 	block := &findAVBlock{}
-
-	block.resultOutput = canvas.NewText("Результат", theme.Color(theme.ColorNameForeground))
-	block.resultOutput.Alignment = fyne.TextAlignCenter
-
-	block.checkButton = widget.NewButton("Проверить наличие антивируса", block.onAVCheckButtonClick)
+	block.sb = newSearchBlock(searchBlockParams{
+		cols: []searchBlockTableCol{
+			{
+				title: binariesTitle,
+				rows:  preferences.AVBinaries,
+			},
+			{
+				title: filepathsTitle,
+				rows:  preferences.AVFilePaths,
+			},
+		},
+		commandFunc: func() command.Request {
+			return command.FindAVRequest{
+				ID: uuid.New(),
+			}
+		},
+		awaitFunc: command.AwaitFindAVResponse,
+	})
 
 	return block
 }
 
 func (b *findAVBlock) getContainer() *fyne.Container {
-	connTesting := container.NewVBox(
-		b.checkButton,
-		b.resultOutput,
+	desc := widget.NewLabel(avSearchDesc)
+	desc.Wrapping = fyne.TextWrapWord
+	return container.NewVBox(
+		widget.NewRichTextFromMarkdown(avSearchTitle),
+		desc,
+		b.sb.getContainer(),
 	)
-
-	return connTesting
-}
-
-func (b *findAVBlock) onAVCheckButtonClick() {
-	go command.AddToQueue(command.FindAVRequest{
-		ID: uuid.New(),
-	})
-
-	go b.awaitAndUpdateUI()
-}
-
-func (b *findAVBlock) awaitAndUpdateUI() {
-	res := command.AwaitFindAVResponse()
-
-	fyne.Do(func() {
-		switch {
-		case res.Error != nil:
-			b.resultOutput.Text = res.Error.Error()
-			b.resultOutput.Color = theme.Color(theme.ColorNameError)
-		case len(res.Found) > 0:
-			b.resultOutput.Text = "Антивирус найден"
-			b.resultOutput.Color = theme.Color(theme.ColorNameSuccess)
-		default:
-			b.resultOutput.Text = "Антивирус не найден"
-			b.resultOutput.Color = theme.Color(theme.ColorNameWarning)
-		}
-		b.resultOutput.Refresh()
-	})
 }

@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"pc_security_test/preferences"
 	"sync"
 	"time"
 
+	"fyne.io/fyne/v2"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	probing "github.com/prometheus-community/pro-bing"
@@ -132,7 +134,13 @@ func EICARTest() (bool, error) {
 		return false, errors.Wrap(err, "error creating file")
 	}
 
-	time.Sleep(5 * time.Second)
+	defer func() {
+		if err := os.Remove(testFile); err != nil {
+			fyne.LogError("error rm eicar file", err)
+		}
+	}()
+
+	time.Sleep(preferences.GetEICARWaitDuration())
 
 	_, err = os.Stat(testFile)
 	if os.IsNotExist(err) {
@@ -140,6 +148,19 @@ func EICARTest() (bool, error) {
 	} else if err != nil {
 		return false, errors.Wrap(err, "error checking file")
 	}
-	_ = os.Remove(testFile)
+
 	return false, nil
+}
+
+func RemoveEICARs() {
+	files, err := filepath.Glob("eicar-*.txt")
+	if err != nil {
+		fyne.LogError("error finding remaining eicar files", err)
+		return
+	}
+	for _, f := range files {
+		if err := os.Remove(f); err != nil {
+			fyne.LogError("error rm eicar file", err)
+		}
+	}
 }

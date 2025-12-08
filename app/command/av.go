@@ -11,13 +11,8 @@ import (
 type FindAVRequest struct {
 	ID uuid.UUID
 }
-type FindAVResponse struct {
-	ID    uuid.UUID
-	Found map[string]string
-	Error error
-}
 
-var findAVResponses = make(chan FindAVResponse)
+var findAVResponses = make(chan SearchResponse)
 
 func findAVRequestToHistoryEntry(fAVReq FindAVRequest) Entry {
 	return Entry{
@@ -26,7 +21,7 @@ func findAVRequestToHistoryEntry(fAVReq FindAVRequest) Entry {
 	}
 }
 
-func findAVResponseToHistoryEntry(fAVRes FindAVResponse) Entry {
+func findAVResponseToHistoryEntry(fAVRes SearchResponse) Entry {
 	avs := []string{}
 	for key, value := range fAVRes.Found {
 		if value == "" {
@@ -51,6 +46,6 @@ func findAVResponseToHistoryEntry(fAVRes FindAVResponse) Entry {
 	}
 }
 
-func AwaitFindAVResponse() FindAVResponse {
+func AwaitFindAVResponse() SearchResponse {
 	return <-findAVResponses
 }

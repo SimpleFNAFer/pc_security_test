@@ -7,7 +7,7 @@ import "pc_security_test/tester"
 func ProcessFindAVRequest(fAVReq FindAVRequest) {
 	found, err := tester.FindAV()
 
-	res := FindAVResponse{
+	res := SearchResponse{
 		ID:    fAVReq.ID,
 		Found: found,
 		Error: err,

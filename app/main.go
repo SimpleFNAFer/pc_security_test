@@ -3,6 +3,7 @@ package main
 import (
 	"pc_security_test/command"
 	"pc_security_test/preferences"
+	"pc_security_test/tester"
 	"pc_security_test/ui"
 
 	"fyne.io/fyne/v2/app"
@@ -17,4 +18,6 @@ func main() {
 
 	ui.InitMasterWindow(a)
 	a.Run()
+
+	defer tester.RemoveEICARs()
 }

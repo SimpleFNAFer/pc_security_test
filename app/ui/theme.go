@@ -47,5 +47,5 @@ func (ct *customTheme) toggleThemeVariant() {
 	ti := slices.Index(avail, t)
 	newTI := (ti - 1 + len(avail)) % len(avail)
 	newT := avail[newTI]
-	fyne.LogError("error setting theme", preferences.AppearanceTheme.Set(newT))
+	preferences.AppearanceTheme.Set(newT)
 }

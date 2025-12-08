@@ -2,6 +2,8 @@ package preferences
 
 import (
 	"errors"
+	"net"
+	"net/url"
 	"runtime"
 	"slices"
 	"time"
@@ -17,8 +19,7 @@ const (
 
 var (
 	stringSliceFallback = []string{stringFallback}
-
-	ErrorWrongArg = errors.New("wrong arg")
+	ErrorWrongArg       = errors.New("wrong arg")
 )
 
 func CheckInitAppPrefs(a fyne.App) {
@@ -48,6 +49,7 @@ func CheckInitAppPrefs(a fyne.App) {
 	checkInitDurationInAppPrefs(
 		a, eicarWaitDurationKey, eicarWaitDurationDefVal, &EICARWaitDurationMin, &EICARWaitDurationMax,
 	)
+	EICARWaitDuration = binding.BindPreferenceString(eicarWaitDurationKey, a.Preferences())
 
 	// av.binaries
 	checkInitStringSliceInAppPrefs(
@@ -153,6 +155,15 @@ const (
 
 var PingDefaultHost binding.String
 
+func PingDefaultHostValidator(v string) error {
+	ip := net.ParseIP(v)
+	_, err := url.ParseRequestURI(v)
+	if ip == nil && err != nil {
+		return errors.New("invalid ip or address")
+	}
+	return nil
+}
+
 // eicar.max_parallel
 const eicarMaxParallelKey = "eicar.max_parallel"
 
@@ -172,6 +183,27 @@ var (
 	eicarWaitDurationDefVal = 10 * time.Second
 	EICARWaitDuration       binding.String
 )
+
+func EICARWaitDurationValidator(v string) error {
+	dur, err := time.ParseDuration(v)
+	if err != nil {
+		return err
+	}
+	if dur < EICARWaitDurationMin ||
+		dur > EICARWaitDurationMax {
+		return errors.New("out of range")
+	}
+	return nil
+}
+
+func GetEICARWaitDuration() time.Duration {
+	strDur, _ := EICARWaitDuration.Get()
+	dur, err := time.ParseDuration(strDur)
+	if err != nil {
+		return eicarWaitDurationDefVal
+	}
+	return dur
+}
 
 // av.binaries
 // av.filepaths

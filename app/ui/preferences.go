@@ -19,6 +19,7 @@ const (
 	appearanceThemeTitle   = "Тема"
 	queueWorkerNumTitle    = "Количество параллельно запущенных обработчиков"
 	eicarMaxParallelTitle  = "Маскимальное количество одновременных EICAR-тестов"
+	eicarWaitDurationTitle = "Время ожидания удаления EICAR-файла"
 	netTitle               = "## Сеть"
 	defaultHostTitle       = "Адрес по умолчанию"
 	avTitle                = "## Антивирус"
@@ -26,6 +27,42 @@ const (
 	binariesTitle          = "Бинарные файлы"
 	filepathsTitle         = "Файловые пути"
 )
+
+type strPrefsEntry struct {
+	widget.Entry
+	data binding.String
+}
+
+func NewStrPrefsEntry(data binding.String) *strPrefsEntry {
+	entry := &strPrefsEntry{
+		data: data,
+	}
+	entry.ExtendBaseWidget(entry)
+	entry.Entry.OnChanged = entry.onChanged
+	entry.Entry.OnSubmitted = entry.onSubmitted
+	text, _ := data.Get()
+	entry.Entry.SetText(text)
+	return entry
+}
+
+func (e *strPrefsEntry) onChanged(s string) {
+	if err := e.Validate(); err == nil {
+		e.data.Set(s)
+	}
+}
+func (e *strPrefsEntry) FocusLost() {
+	e.Entry.FocusLost()
+	if err := e.Validate(); err != nil {
+		validV, _ := e.data.Get()
+		e.Entry.SetText(validV)
+	}
+}
+func (e *strPrefsEntry) onSubmitted(s string) {
+	if err := e.Validate(); err != nil {
+		validV, _ := e.data.Get()
+		e.Entry.SetText(validV)
+	}
+}
 
 func OpenPreferencesWindow() {
 	pw := fyne.CurrentApp().NewWindow(preferencesWindowTitle)
@@ -49,7 +86,8 @@ func OpenPreferencesWindow() {
 		sliderLegend(preferences.QueueWorkerNumMin, preferences.QueueWorkerNumMax),
 	)
 
-	pingDefaultHost := widget.NewEntryWithData(preferences.PingDefaultHost)
+	pingDefaultHost := NewStrPrefsEntry(preferences.PingDefaultHost)
+	pingDefaultHost.Validator = preferences.PingDefaultHostValidator
 	pingBlock := container.NewBorder(
 		widget.NewLabel(defaultHostTitle),
 		pingDefaultHost,
@@ -68,6 +106,19 @@ func OpenPreferencesWindow() {
 		sliderLegend(preferences.EICARMaxParallelMin, preferences.EICARMaxParallelMax),
 	)
 
+	eicarWaitDuration := NewStrPrefsEntry(preferences.EICARWaitDuration)
+	eicarWaitDuration.Validator = preferences.EICARWaitDurationValidator
+	eicarWaitDurationBlock := container.NewVBox(
+		widget.NewLabel(
+			fmt.Sprintf("%s (от %s до %s включительно)",
+				eicarWaitDurationTitle,
+				preferences.EICARWaitDurationMin,
+				preferences.EICARWaitDurationMax,
+			),
+		),
+		eicarWaitDuration,
+	)
+
 	avBinaries := stringListBlock(preferences.AVBinaries)
 	avFilePaths := stringListBlock(preferences.AVFilePaths)
 	avTabs := container.NewAppTabs(
@@ -77,6 +128,8 @@ func OpenPreferencesWindow() {
 	avBlock := container.NewVBox(
 		widget.NewRichTextFromMarkdown(avTitle),
 		eicarMaxParallelBlock,
+		widget.NewSeparator(),
+		eicarWaitDurationBlock,
 		widget.NewSeparator(),
 		avTabs,
 		widget.NewSeparator(),
@@ -136,17 +189,21 @@ func sliderLegend(min, max int) *fyne.Container {
 func stringListBlock(strList binding.StringList) *fyne.Container {
 	list := widget.NewListWithData(
 		strList,
-		func() fyne.CanvasObject { return widget.NewLabel("") },
+		func() fyne.CanvasObject {
+			w := widget.NewLabel("")
+			return w
+		},
 		func(di binding.DataItem, co fyne.CanvasObject) {
 			co.(*widget.Label).Bind(di.(binding.String))
 		},
 	)
+
 	entry := widget.NewEntry()
 	addBtn := widget.NewButtonWithIcon("", theme.ContentAddIcon(), func() {
 		text := entry.Text
 		strSlice, _ := strList.Get()
 		if text != "" && !slices.Contains(strSlice, text) {
-			fyne.LogError("error appending to the list", strList.Append(text))
+			strList.Append(text)
 		}
 		entry.SetText("")
 	})
@@ -154,7 +211,7 @@ func stringListBlock(strList binding.StringList) *fyne.Container {
 		text := entry.Text
 		strSlice, _ := strList.Get()
 		if text != "" && slices.Contains(strSlice, text) {
-			fyne.LogError("error removing from the list", strList.Remove(text))
+			strList.Remove(text)
 		}
 		entry.SetText("")
 		list.UnselectAll()

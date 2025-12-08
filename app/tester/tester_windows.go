@@ -3,6 +3,7 @@
 package tester
 
 import (
+	"fmt"
 	"maps"
 	"os/exec"
 	"strings"
@@ -35,9 +36,10 @@ func FindAV() (map[string]string, error) {
 	)
 
 	type AntiVirusProduct struct {
-		DisplayName            string
-		ProductState           uint32
-		PathToSignedProductExe string
+		DisplayName              string
+		ProductState             uint32
+		PathToSignedProductExe   string
+		PathToSignedReportingExe string
 	}
 
 	var antivirus []AntiVirusProduct
@@ -47,7 +49,7 @@ func FindAV() (map[string]string, error) {
 	}
 
 	for _, av := range antivirus {
-		res[av.DisplayName] = av.PathToSignedProductExe
+		res[av.DisplayName] = fmt.Sprintf("%s ; %s", av.PathToSignedProductExe, av.PathToSignedReportingExe)
 	}
 
 	found := FindBinariesAndPaths(SourceTypeAV)

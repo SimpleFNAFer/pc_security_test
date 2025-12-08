@@ -12,13 +12,8 @@ import (
 type FindFWRequest struct {
 	ID uuid.UUID
 }
-type FindFWResponse struct {
-	ID    uuid.UUID
-	Found map[string]string
-	Error error
-}
 
-var findFWResponses = make(chan FindFWResponse)
+var findFWResponses = make(chan SearchResponse)
 
 func findFWRequestToHistoryEntry(fFWReq FindFWRequest) Entry {
 	return Entry{
@@ -27,7 +22,7 @@ func findFWRequestToHistoryEntry(fFWReq FindFWRequest) Entry {
 	}
 }
 
-func findFWResponseToHistoryEntry(fFWRes FindFWResponse) Entry {
+func findFWResponseToHistoryEntry(fFWRes SearchResponse) Entry {
 	fws := []string{}
 	for key, value := range fFWRes.Found {
 		if value == "" {
@@ -52,7 +47,7 @@ func findFWResponseToHistoryEntry(fFWRes FindFWResponse) Entry {
 	}
 }
 
-func AwaitFindFWResponse() FindFWResponse {
+func AwaitFindFWResponse() SearchResponse {
 	return <-findFWResponses
 }
 

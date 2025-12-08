@@ -4,12 +4,10 @@ import (
 	"fmt"
 	"log"
 	"pc_security_test/command"
-	"reflect"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
-	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 )
 
@@ -28,10 +26,6 @@ type historyBlock struct {
 }
 
 func initHistoryBlock(master fyne.Window) *historyBlock {
-	if reflect.ValueOf(master).IsNil() {
-		panic("master window is nil")
-	}
-
 	block := &historyBlock{
 		master:    master,
 		textLines: widget.NewLabel(""),
@@ -42,7 +36,6 @@ func initHistoryBlock(master fyne.Window) *historyBlock {
 	block.clearHistoryBtn = widget.NewButton(clearHistoryBtnText, block.clearHistory)
 
 	sc := container.NewVScroll(block.textLines)
-	sc.SetMinSize(fyne.NewSize(0, 300))
 	block.sc = sc
 
 	return block
@@ -54,7 +47,7 @@ func (h *historyBlock) getContainer() *fyne.Container {
 		h.clearHistoryBtn,
 	)
 
-	c := container.NewVBox(widget.NewSeparator(), h.sc, layout.NewSpacer(), buttons)
+	c := container.NewBorder(widget.NewSeparator(), buttons, nil, nil, h.sc)
 
 	go h.awaitHistoryEntries()
 

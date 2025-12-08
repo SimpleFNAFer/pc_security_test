@@ -7,7 +7,7 @@ import "pc_security_test/tester"
 func ProcessFindFWRequest(fFWReq FindFWRequest) {
 	found, err := tester.FindFW()
 
-	fFWRes := FindFWResponse{
+	fFWRes := SearchResponse{
 		ID:    fFWReq.ID,
 		Found: found,
 		Error: err,

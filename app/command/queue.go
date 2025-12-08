@@ -2,13 +2,20 @@ package command
 
 import (
 	"pc_security_test/preferences"
+
+	"github.com/google/uuid"
 )
 
-type request any
+type Request any
+type SearchResponse struct {
+	ID    uuid.UUID
+	Found map[string]string
+	Error error
+}
 
-var queue = make(chan request)
+var queue = make(chan Request)
 
-func AddToQueue(command request) {
+func AddToQueue(command Request) {
 	queue <- command
 }
 

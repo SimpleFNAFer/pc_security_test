@@ -16,16 +16,16 @@ const (
 
 func InitMasterWindow(app fyne.App) {
 	mw := app.NewWindow("Проверка защищённости ПК")
-	mw.Resize(fyne.NewSize(800, 800))
+	mw.Resize(fyne.NewSize(800, 600))
 	mw.SetMaster()
 	mw.Show()
 
 	initAndSetCustomTheme()
 
 	pingBlock := newPingBlock()
-	findFWBlock := newFindFWBlock()
-	testFWBlock := newTestFWBlock()
-	findAVBlock := newFindAVBlock()
+	searchFWBlock := newSearchFWBlock()
+	// todo testFWBlock := newTestFWBlock()
+	searchAVBlock := newSearchAVBlock()
 	eicarBlock := newEICARBlock()
 
 	historyBlock := initHistoryBlock(mw)
@@ -35,10 +35,9 @@ func InitMasterWindow(app fyne.App) {
 			navPingBtnLabel,
 			container.New(
 				layout.CustomPaddedLayout{
-					TopPadding:    100,
-					BottomPadding: 100,
-					LeftPadding:   200,
-					RightPadding:  200,
+					TopPadding:   50,
+					LeftPadding:  50,
+					RightPadding: 50,
 				},
 				pingBlock.getContainer(),
 			)),
@@ -46,13 +45,12 @@ func InitMasterWindow(app fyne.App) {
 			navAVBtnLabel,
 			container.New(
 				layout.CustomPaddedLayout{
-					TopPadding:    100,
-					BottomPadding: 100,
-					LeftPadding:   200,
-					RightPadding:  200,
+					TopPadding:   50,
+					LeftPadding:  50,
+					RightPadding: 50,
 				},
-				container.NewHBox(
-					findAVBlock.getContainer(),
+				container.NewVBox(
+					searchAVBlock.getContainer(),
 					layout.NewSpacer(),
 					eicarBlock.getContainer(),
 				),
@@ -61,15 +59,14 @@ func InitMasterWindow(app fyne.App) {
 			navFWBtnLabel,
 			container.New(
 				layout.CustomPaddedLayout{
-					TopPadding:    100,
-					BottomPadding: 100,
-					LeftPadding:   200,
-					RightPadding:  200,
+					TopPadding:   50,
+					LeftPadding:  50,
+					RightPadding: 50,
 				},
-				container.NewHBox(
-					findFWBlock.getContainer(),
-					layout.NewSpacer(),
-					testFWBlock.getContainer(),
+				container.NewVBox(
+					searchFWBlock.getContainer(),
+					//layout.NewSpacer(),
+					//testFWBlock.getContainer(),
 				),
 			)),
 	)
@@ -79,8 +76,8 @@ func InitMasterWindow(app fyne.App) {
 			layout.NewSpacer(),
 			widget.NewButtonWithIcon("", theme.ColorPaletteIcon(), CT.toggleThemeVariant),
 		),
-		historyBlock.getContainer(), nil, nil,
-		ats,
+		nil, nil, nil,
+		container.NewVSplit(container.NewScroll(ats), historyBlock.getContainer()),
 	)
 
 	mw.SetContent(mc)
