@@ -4,35 +4,38 @@ import (
 	"pc_security_test/command"
 
 	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/google/uuid"
 )
 
 const (
-	defaultEICARResultOutputText = "Результат"
-	defaultEICARCheckButtonText  = "Тест EICAR"
+	eicarTitle = "## Проверка работоспособности антивируса"
+	eicarDesc  = `Данный раздел предназначен для проверки работоспособности антивируса с помощью EICAR-теста.
+
+Максимальное количество одновременных тестов, а также длительность ожидания одного теста можно отредактировать в настройках в разделе "Антивирус".
+
+Для начала проверки нажмите "Тест EICAR". Результат отобразится ниже, а также будет сохранён в истории.
+	`
 )
 
 type eicarBlock struct {
-	resultOutput *canvas.Text
+	resultOutput *widget.Label
 	checkButton  *widget.Button
 }
 
 func newEICARBlock() *eicarBlock {
 	block := &eicarBlock{}
-	block.resultOutput = canvas.NewText(defaultEICARResultOutputText, theme.Color(theme.ColorNameForeground))
-	block.resultOutput.Alignment = fyne.TextAlignCenter
-
-	block.checkButton = widget.NewButton(defaultEICARCheckButtonText, block.onEICARButtonClick)
-
+	block.resultOutput = widget.NewLabel("")
+	block.checkButton = widget.NewButton("Тест EICAR", block.onEICARButtonClick)
 	return block
 }
 
 func (e *eicarBlock) getContainer() *fyne.Container {
+	desc := widget.NewLabel(eicarDesc)
+	desc.Wrapping = fyne.TextWrapWord
 	connTesting := container.NewVBox(
+		widget.NewRichTextFromMarkdown(eicarTitle), desc,
 		e.checkButton,
 		e.resultOutput,
 	)
@@ -53,13 +56,13 @@ func (e *eicarBlock) awaitAndUpdateUI() {
 		switch {
 		case eRes.Error != nil:
 			e.resultOutput.Text = eRes.Error.Error()
-			e.resultOutput.Color = theme.Color(theme.ColorNameError)
+			e.resultOutput.Importance = widget.DangerImportance
 		case eRes.Passed:
 			e.resultOutput.Text = "EICAR-тест пройден успешно. Антивирус работает"
-			e.resultOutput.Color = theme.Color(theme.ColorNameSuccess)
+			e.resultOutput.Importance = widget.SuccessImportance
 		default:
 			e.resultOutput.Text = "EICAR-тест не пройден. Антивирус не работает"
-			e.resultOutput.Color = theme.Color(theme.ColorNameWarning)
+			e.resultOutput.Importance = widget.WarningImportance
 		}
 		e.resultOutput.Refresh()
 	})

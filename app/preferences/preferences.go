@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net"
 	"net/url"
+	"regexp"
 	"runtime"
 	"slices"
 	"time"
@@ -118,18 +119,34 @@ func slicesEqual[T comparable](a, b []T) bool {
 	return true
 }
 
+func SetDefaultAll() {
+	SetDefaultAppearanceTheme()
+	SetDefaultQueueWorkerNum()
+	SetDefaultPingDefaultHost()
+	SetDefaultEICARMaxParallel()
+	SetDefaultEICARWaitDuration()
+	SetDefaultAVBinaries()
+	SetDefaultAVFilePaths()
+	SetDefaultFWBinaries()
+	SetDefaultFWFilePaths()
+}
+
 // appearance.theme
 const (
 	appearanceThemeKey    = "appearance.theme"
 	AppearanceThemeLight  = "light"
 	AppearanceThemeDark   = "dark"
-	appearanceThemeDefVal = AppearanceThemeDark
+	AppearanceThemeSystem = "system"
+	appearanceThemeDefVal = AppearanceThemeSystem
 )
 
 var AppearanceTheme binding.String
 
 func AvailableAppearanceTheme() []string {
-	return []string{AppearanceThemeLight, AppearanceThemeDark}
+	return []string{AppearanceThemeLight, AppearanceThemeDark, AppearanceThemeSystem}
+}
+func SetDefaultAppearanceTheme() {
+	AppearanceTheme.Set(appearanceThemeDefVal)
 }
 
 // queue.worker_num
@@ -147,21 +164,33 @@ var (
 	QueueWorkerNum binding.Int
 )
 
+func SetDefaultQueueWorkerNum() {
+	QueueWorkerNum.Set(queueWorkerNumDefVal)
+}
+
 // ping.default_host
 const (
 	pingDefaultHostKey    = "ping.default_host"
 	pingDefaultHostDefVal = "mail.ru"
 )
 
-var PingDefaultHost binding.String
+var (
+	domainRegexp    = regexp.MustCompile(`^(?i)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$`)
+	PingDefaultHost binding.String
+)
 
 func PingDefaultHostValidator(v string) error {
 	ip := net.ParseIP(v)
+	isDN := domainRegexp.MatchString(v)
 	_, err := url.ParseRequestURI(v)
-	if ip == nil && err != nil {
+
+	if ip == nil && !isDN && err != nil {
 		return errors.New("invalid ip or address")
 	}
 	return nil
+}
+func SetDefaultPingDefaultHost() {
+	PingDefaultHost.Set(pingDefaultHostDefVal)
 }
 
 // eicar.max_parallel
@@ -173,6 +202,10 @@ var (
 	eicarMaxParallelDefVal = EICARMaxParallelMin
 	EICARMaxParallel       binding.Int
 )
+
+func SetDefaultEICARMaxParallel() {
+	EICARMaxParallel.Set(eicarMaxParallelDefVal)
+}
 
 // eicar.wait_duration
 const eicarWaitDurationKey = "eicar.wait_duration"
@@ -195,7 +228,6 @@ func EICARWaitDurationValidator(v string) error {
 	}
 	return nil
 }
-
 func GetEICARWaitDuration() time.Duration {
 	strDur, _ := EICARWaitDuration.Get()
 	dur, err := time.ParseDuration(strDur)
@@ -203,6 +235,9 @@ func GetEICARWaitDuration() time.Duration {
 		return eicarWaitDurationDefVal
 	}
 	return dur
+}
+func SetDefaultEICARWaitDuration() {
+	EICARWaitDuration.Set(eicarWaitDurationDefVal.String())
 }
 
 // av.binaries
@@ -222,3 +257,16 @@ var (
 	FWBinaries  binding.StringList
 	FWFilePaths binding.StringList
 )
+
+func SetDefaultAVBinaries() {
+	AVBinaries.Set(avBinariesDefVal)
+}
+func SetDefaultAVFilePaths() {
+	AVFilePaths.Set(avFilePathsDefVal)
+}
+func SetDefaultFWBinaries() {
+	FWBinaries.Set(fwBinariesDefVal)
+}
+func SetDefaultFWFilePaths() {
+	FWFilePaths.Set(fwFilePathsDefVal)
+}

@@ -23,10 +23,14 @@ func initAndSetCustomTheme() {
 
 func (ct *customTheme) Color(tcn fyne.ThemeColorName, tv fyne.ThemeVariant) color.Color {
 	t, _ := preferences.AppearanceTheme.Get()
-	if t == preferences.AppearanceThemeDark {
+	switch t {
+	case preferences.AppearanceThemeDark:
 		return theme.DefaultTheme().Color(tcn, theme.VariantDark)
+	case preferences.AppearanceThemeLight:
+		return theme.DefaultTheme().Color(tcn, theme.VariantLight)
+	default:
+		return theme.DefaultTheme().Color(tcn, tv)
 	}
-	return theme.DefaultTheme().Color(tcn, theme.VariantLight)
 }
 
 func (ct *customTheme) Font(ts fyne.TextStyle) fyne.Resource {

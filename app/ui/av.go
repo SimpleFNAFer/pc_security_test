@@ -12,8 +12,7 @@ import (
 
 const (
 	avSearchTitle = "## Проверка наличия антивируса"
-	avSearchDesc  = `
-Данный раздел предназначен для поиска исполняемых файлов (в PATH), а также файловых путей.
+	avSearchDesc  = `Данный раздел предназначен для поиска исполняемых файлов (в PATH), а также файловых путей.
 
 Список доступных для поиска файлов и путей можно отредактировать в настройках в разделе "Антивирус".
 
@@ -22,12 +21,12 @@ const (
 	`
 )
 
-type findAVBlock struct {
+type avSearchBlock struct {
 	sb *searchBlock
 }
 
-func newSearchAVBlock() *findAVBlock {
-	block := &findAVBlock{}
+func newSearchAVBlock() *avSearchBlock {
+	block := &avSearchBlock{}
 	block.sb = newSearchBlock(searchBlockParams{
 		cols: []searchBlockTableCol{
 			{
@@ -50,12 +49,11 @@ func newSearchAVBlock() *findAVBlock {
 	return block
 }
 
-func (b *findAVBlock) getContainer() *fyne.Container {
+func (b *avSearchBlock) getContainer() *fyne.Container {
 	desc := widget.NewLabel(avSearchDesc)
 	desc.Wrapping = fyne.TextWrapWord
 	return container.NewVBox(
-		widget.NewRichTextFromMarkdown(avSearchTitle),
-		desc,
+		widget.NewRichTextFromMarkdown(avSearchTitle), desc,
 		b.sb.getContainer(),
 	)
 }

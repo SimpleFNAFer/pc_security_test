@@ -69,8 +69,8 @@ func OpenPreferencesWindow() {
 	pw.Resize(fyne.NewSize(400, 800))
 
 	appearanceTheme := widget.NewSelectWithData(preferences.AvailableAppearanceTheme(), preferences.AppearanceTheme)
-	appearanceThemeBlock := container.NewHBox(
-		widget.NewLabel(appearanceThemeTitle),
+	appearanceThemeBlock := container.NewVBox(
+		prefTitleWithResetBtn(appearanceThemeTitle, preferences.SetDefaultAppearanceTheme),
 		appearanceTheme,
 	)
 
@@ -81,7 +81,7 @@ func OpenPreferencesWindow() {
 	)
 	queueWorkerNum.Step = 1
 	queueWorkerNumBlock := container.NewVBox(
-		widget.NewLabel(queueWorkerNumTitle),
+		prefTitleWithResetBtn(queueWorkerNumTitle, preferences.SetDefaultQueueWorkerNum),
 		queueWorkerNum,
 		sliderLegend(preferences.QueueWorkerNumMin, preferences.QueueWorkerNumMax),
 	)
@@ -89,7 +89,7 @@ func OpenPreferencesWindow() {
 	pingDefaultHost := NewStrPrefsEntry(preferences.PingDefaultHost)
 	pingDefaultHost.Validator = preferences.PingDefaultHostValidator
 	pingBlock := container.NewBorder(
-		widget.NewLabel(defaultHostTitle),
+		prefTitleWithResetBtn(defaultHostTitle, preferences.SetDefaultPingDefaultHost),
 		pingDefaultHost,
 		nil, nil, nil,
 	)
@@ -101,7 +101,7 @@ func OpenPreferencesWindow() {
 	)
 	eicarMaxParallel.Step = 1
 	eicarMaxParallelBlock := container.NewVBox(
-		widget.NewLabel(eicarMaxParallelTitle),
+		prefTitleWithResetBtn(eicarMaxParallelTitle, preferences.SetDefaultEICARMaxParallel),
 		eicarMaxParallel,
 		sliderLegend(preferences.EICARMaxParallelMin, preferences.EICARMaxParallelMax),
 	)
@@ -109,18 +109,19 @@ func OpenPreferencesWindow() {
 	eicarWaitDuration := NewStrPrefsEntry(preferences.EICARWaitDuration)
 	eicarWaitDuration.Validator = preferences.EICARWaitDurationValidator
 	eicarWaitDurationBlock := container.NewVBox(
-		widget.NewLabel(
+		prefTitleWithResetBtn(
 			fmt.Sprintf("%s (от %s до %s включительно)",
 				eicarWaitDurationTitle,
 				preferences.EICARWaitDurationMin,
 				preferences.EICARWaitDurationMax,
 			),
+			preferences.SetDefaultEICARMaxParallel,
 		),
 		eicarWaitDuration,
 	)
 
-	avBinaries := stringListBlock(preferences.AVBinaries)
-	avFilePaths := stringListBlock(preferences.AVFilePaths)
+	avBinaries := stringListBlock(preferences.AVBinaries, preferences.SetDefaultAVBinaries)
+	avFilePaths := stringListBlock(preferences.AVFilePaths, preferences.SetDefaultAVFilePaths)
 	avTabs := container.NewAppTabs(
 		container.NewTabItem(binariesTitle, avBinaries),
 		container.NewTabItem(filepathsTitle, avFilePaths),
@@ -135,8 +136,8 @@ func OpenPreferencesWindow() {
 		widget.NewSeparator(),
 	)
 
-	fwBinaries := stringListBlock(preferences.FWBinaries)
-	fwFilePaths := stringListBlock(preferences.FWFilePaths)
+	fwBinaries := stringListBlock(preferences.FWBinaries, preferences.SetDefaultFWBinaries)
+	fwFilePaths := stringListBlock(preferences.FWFilePaths, preferences.SetDefaultFWFilePaths)
 	fwTabs := container.NewAppTabs(
 		container.NewTabItem(binariesTitle, fwBinaries),
 		container.NewTabItem(filepathsTitle, fwFilePaths),
@@ -147,6 +148,9 @@ func OpenPreferencesWindow() {
 		widget.NewSeparator(),
 	)
 
+	restoreAllBtn := widget.NewButtonWithIcon("Сбросить все", theme.ContentUndoIcon(), preferences.SetDefaultAll)
+	restoreAllBtn.Importance = widget.DangerImportance
+
 	scroll := container.NewVScroll(
 		container.New(
 			layout.CustomPaddedLayout{
@@ -154,6 +158,7 @@ func OpenPreferencesWindow() {
 				RightPadding: 50,
 			},
 			container.NewVBox(
+				container.NewHBox(layout.NewSpacer(), restoreAllBtn),
 				widget.NewRichTextFromMarkdown(commonTitle),
 				appearanceThemeBlock,
 				widget.NewSeparator(),
@@ -176,17 +181,22 @@ func OpenPreferencesWindow() {
 
 func sliderLegend(min, max int) *fyne.Container {
 	objects := []fyne.CanvasObject{}
+
 	for i := min; i < max; i++ {
 		l := widget.NewLabel(fmt.Sprintf("%d", i))
+		l.Importance = widget.HighImportance
 		objects = append(objects, l, layout.NewSpacer())
 	}
 	l := widget.NewLabel(fmt.Sprintf("%d", max))
+	l.Importance = widget.HighImportance
 	objects = append(objects, l)
+
+	//c := container.NewGridWithColumns(len(objects), objects...)
 
 	return container.NewHBox(objects...)
 }
 
-func stringListBlock(strList binding.StringList) *fyne.Container {
+func stringListBlock(strList binding.StringList, reset func()) *fyne.Container {
 	list := widget.NewListWithData(
 		strList,
 		func() fyne.CanvasObject {
@@ -218,7 +228,7 @@ func stringListBlock(strList binding.StringList) *fyne.Container {
 	})
 	rmBtn.Disable()
 	panel := container.NewBorder(
-		nil, nil, nil, container.NewHBox(addBtn, rmBtn), entry,
+		nil, nil, nil, container.NewHBox(addBtn, rmBtn, resetBtn(reset)), entry,
 	)
 	list.OnUnselected = func(id widget.ListItemID) { rmBtn.Disable() }
 	list.OnSelected = func(id widget.ListItemID) {
@@ -233,4 +243,14 @@ func stringListBlock(strList binding.StringList) *fyne.Container {
 	)
 
 	return block
+}
+
+func resetBtn(reset func()) *widget.Button {
+	btn := widget.NewButtonWithIcon("", theme.ContentUndoIcon(), reset)
+	btn.Importance = widget.LowImportance
+	return btn
+}
+
+func prefTitleWithResetBtn(title string, reset func()) *fyne.Container {
+	return container.NewBorder(nil, nil, resetBtn(reset), nil, widget.NewLabel(title))
 }

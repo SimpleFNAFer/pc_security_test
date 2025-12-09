@@ -12,8 +12,7 @@ import (
 
 const (
 	fwSearchTitle = "## Проверка наличия межсетевого экрана"
-	fwSearchDesc  = `
-Данный раздел предназначен для поиска исполняемых файлов (в PATH), а также файловых путей.
+	fwSearchDesc  = `Данный раздел предназначен для поиска исполняемых файлов (в PATH), а также файловых путей.
 
 Список доступных для поиска файлов и путей можно отредактировать в настройках в разделе "Межсетевой экран".
 
@@ -22,12 +21,12 @@ const (
 	`
 )
 
-type findFWBlock struct {
+type fwSearchBlock struct {
 	sb *searchBlock
 }
 
-func newSearchFWBlock() *findFWBlock {
-	block := &findFWBlock{}
+func newSearchFWBlock() *fwSearchBlock {
+	block := &fwSearchBlock{}
 	block.sb = newSearchBlock(searchBlockParams{
 		cols: []searchBlockTableCol{
 			{
@@ -50,12 +49,11 @@ func newSearchFWBlock() *findFWBlock {
 	return block
 }
 
-func (b *findFWBlock) getContainer() *fyne.Container {
+func (b *fwSearchBlock) getContainer() *fyne.Container {
 	desc := widget.NewLabel(fwSearchDesc)
 	desc.Wrapping = fyne.TextWrapWord
 	return container.NewVBox(
-		widget.NewRichTextFromMarkdown(fwSearchTitle),
-		desc,
+		widget.NewRichTextFromMarkdown(fwSearchTitle), desc,
 		b.sb.getContainer(),
 	)
 }
