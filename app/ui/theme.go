@@ -51,5 +51,5 @@ func (ct *customTheme) toggleThemeVariant() {
 	ti := slices.Index(avail, t)
 	newTI := (ti - 1 + len(avail)) % len(avail)
 	newT := avail[newTI]
-	preferences.AppearanceTheme.Set(newT)
+	_ = preferences.AppearanceTheme.Set(newT)
 }

@@ -1,37 +1,52 @@
 package tester
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"pc_security_test/preferences"
+	"strings"
 	"sync"
 	"time"
 
 	"fyne.io/fyne/v2"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
-	probing "github.com/prometheus-community/pro-bing"
 )
 
 func Ping(host string) (bool, error) {
-	pinger, err := probing.NewPinger(host)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to create pinger")
-	}
-
-	pinger.Count = 3
-	ctxTimeout, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	err = pinger.RunWithContext(ctxTimeout)
-	if err != nil {
-		return false, errors.Wrap(err, "error running pinger")
-	}
+	available := false
 
-	return pinger.Statistics().PacketsRecv > 0, nil
+	cmd := exec.CommandContext(ctx, "ping", host)
+	outPipe, err := cmd.StdoutPipe()
+	if err != nil {
+		return false, err
+	}
+	if err = cmd.Start(); err != nil {
+		return false, err
+	}
+	scanner := bufio.NewScanner(outPipe)
+	for scanner.Scan() {
+		line := scanner.Text()
+		fmt.Println(line)
+
+		if strings.Contains(line, "time=") {
+			available = true
+			_ = cmd.Process.Signal(os.Interrupt)
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		return false, err
+	}
+	_ = cmd.Wait()
+
+	return available, nil
 }
 
 func findBinariesPaths(binaries []string) map[string]string {

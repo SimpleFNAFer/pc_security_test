@@ -27,7 +27,7 @@ func InitMasterWindow(app fyne.App) {
 
 	pingBlock := newPingBlock()
 	searchFWBlock := newSearchFWBlock()
-	// todo testFWBlock := newTestFWBlock()
+	// testFWBlock := newTestFWBlock()
 	searchAVBlock := newSearchAVBlock()
 	eicarBlock := newEICARBlock()
 
@@ -71,8 +71,8 @@ func InitMasterWindow(app fyne.App) {
 				},
 				container.NewVBox(
 					searchFWBlock.getContainer(),
-					//layout.NewSpacer(),
-					//testFWBlock.getContainer(),
+					// layout.NewSpacer(),
+					// testFWBlock.getContainer(),
 				),
 			)),
 	)

@@ -38,29 +38,29 @@ func NewStrPrefsEntry(data binding.String) *strPrefsEntry {
 		data: data,
 	}
 	entry.ExtendBaseWidget(entry)
-	entry.Entry.OnChanged = entry.onChanged
-	entry.Entry.OnSubmitted = entry.onSubmitted
+	entry.OnChanged = entry.onChanged
+	entry.OnSubmitted = entry.onSubmitted
 	text, _ := data.Get()
-	entry.Entry.SetText(text)
+	entry.SetText(text)
 	return entry
 }
 
 func (e *strPrefsEntry) onChanged(s string) {
 	if err := e.Validate(); err == nil {
-		e.data.Set(s)
+		_ = e.data.Set(s)
 	}
 }
 func (e *strPrefsEntry) FocusLost() {
 	e.Entry.FocusLost()
 	if err := e.Validate(); err != nil {
 		validV, _ := e.data.Get()
-		e.Entry.SetText(validV)
+		e.SetText(validV)
 	}
 }
 func (e *strPrefsEntry) onSubmitted(s string) {
 	if err := e.Validate(); err != nil {
 		validV, _ := e.data.Get()
-		e.Entry.SetText(validV)
+		e.SetText(validV)
 	}
 }
 
@@ -82,6 +82,7 @@ func OpenPreferencesWindow() {
 	queueWorkerNum.Step = 1
 	queueWorkerNumBlock := container.NewVBox(
 		prefTitleWithResetBtn(queueWorkerNumTitle, preferences.SetDefaultQueueWorkerNum),
+		sliderValue(preferences.QueueWorkerNum),
 		queueWorkerNum,
 		sliderLegend(preferences.QueueWorkerNumMin, preferences.QueueWorkerNumMax),
 	)
@@ -102,6 +103,7 @@ func OpenPreferencesWindow() {
 	eicarMaxParallel.Step = 1
 	eicarMaxParallelBlock := container.NewVBox(
 		prefTitleWithResetBtn(eicarMaxParallelTitle, preferences.SetDefaultEICARMaxParallel),
+		sliderValue(preferences.EICARMaxParallel),
 		eicarMaxParallel,
 		sliderLegend(preferences.EICARMaxParallelMin, preferences.EICARMaxParallelMax),
 	)
@@ -180,20 +182,22 @@ func OpenPreferencesWindow() {
 }
 
 func sliderLegend(min, max int) *fyne.Container {
-	objects := []fyne.CanvasObject{}
-
-	for i := min; i < max; i++ {
-		l := widget.NewLabel(fmt.Sprintf("%d", i))
-		l.Importance = widget.HighImportance
-		objects = append(objects, l, layout.NewSpacer())
+	co := func(v int) *widget.Label {
+		l := widget.NewLabel(fmt.Sprintf("%d", v))
+		l.TextStyle.Bold = true
+		l.SizeName = theme.SizeNameCaptionText
+		return l
 	}
-	l := widget.NewLabel(fmt.Sprintf("%d", max))
-	l.Importance = widget.HighImportance
-	objects = append(objects, l)
 
-	//c := container.NewGridWithColumns(len(objects), objects...)
+	return container.NewHBox(co(min), layout.NewSpacer(), co(max))
+}
 
-	return container.NewHBox(objects...)
+func sliderValue(b binding.Int) *fyne.Container {
+	e := widget.NewLabelWithData(binding.IntToString(b))
+	e.Importance = widget.HighImportance
+	e.TextStyle.Bold = true
+	e.SizeName = theme.SizeNameHeadingText
+	return container.NewHBox(e, layout.NewSpacer())
 }
 
 func stringListBlock(strList binding.StringList, reset func()) *fyne.Container {
@@ -213,7 +217,7 @@ func stringListBlock(strList binding.StringList, reset func()) *fyne.Container {
 		text := entry.Text
 		strSlice, _ := strList.Get()
 		if text != "" && !slices.Contains(strSlice, text) {
-			strList.Append(text)
+			_ = strList.Append(text)
 		}
 		entry.SetText("")
 	})
@@ -221,7 +225,7 @@ func stringListBlock(strList binding.StringList, reset func()) *fyne.Container {
 		text := entry.Text
 		strSlice, _ := strList.Get()
 		if text != "" && slices.Contains(strSlice, text) {
-			strList.Remove(text)
+			_ = strList.Remove(text)
 		}
 		entry.SetText("")
 		list.UnselectAll()

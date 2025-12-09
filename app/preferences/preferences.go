@@ -3,7 +3,6 @@ package preferences
 import (
 	"errors"
 	"net"
-	"net/url"
 	"regexp"
 	"runtime"
 	"slices"
@@ -146,7 +145,7 @@ func AvailableAppearanceTheme() []string {
 	return []string{AppearanceThemeLight, AppearanceThemeDark, AppearanceThemeSystem}
 }
 func SetDefaultAppearanceTheme() {
-	AppearanceTheme.Set(appearanceThemeDefVal)
+	_ = AppearanceTheme.Set(appearanceThemeDefVal)
 }
 
 // queue.worker_num
@@ -165,7 +164,7 @@ var (
 )
 
 func SetDefaultQueueWorkerNum() {
-	QueueWorkerNum.Set(queueWorkerNumDefVal)
+	_ = QueueWorkerNum.Set(queueWorkerNumDefVal)
 }
 
 // ping.default_host
@@ -180,17 +179,17 @@ var (
 )
 
 func PingDefaultHostValidator(v string) error {
-	ip := net.ParseIP(v)
-	isDN := domainRegexp.MatchString(v)
-	_, err := url.ParseRequestURI(v)
-
-	if ip == nil && !isDN && err != nil {
-		return errors.New("invalid ip or address")
+	if ip := net.ParseIP(v); ip != nil {
+		return nil
 	}
-	return nil
+	if isDN := domainRegexp.MatchString(v); isDN {
+		return nil
+	}
+
+	return errors.New("invalid ip or address")
 }
 func SetDefaultPingDefaultHost() {
-	PingDefaultHost.Set(pingDefaultHostDefVal)
+	_ = PingDefaultHost.Set(pingDefaultHostDefVal)
 }
 
 // eicar.max_parallel
@@ -204,7 +203,7 @@ var (
 )
 
 func SetDefaultEICARMaxParallel() {
-	EICARMaxParallel.Set(eicarMaxParallelDefVal)
+	_ = EICARMaxParallel.Set(eicarMaxParallelDefVal)
 }
 
 // eicar.wait_duration
@@ -237,7 +236,7 @@ func GetEICARWaitDuration() time.Duration {
 	return dur
 }
 func SetDefaultEICARWaitDuration() {
-	EICARWaitDuration.Set(eicarWaitDurationDefVal.String())
+	_ = EICARWaitDuration.Set(eicarWaitDurationDefVal.String())
 }
 
 // av.binaries
@@ -259,14 +258,14 @@ var (
 )
 
 func SetDefaultAVBinaries() {
-	AVBinaries.Set(avBinariesDefVal)
+	_ = AVBinaries.Set(avBinariesDefVal)
 }
 func SetDefaultAVFilePaths() {
-	AVFilePaths.Set(avFilePathsDefVal)
+	_ = AVFilePaths.Set(avFilePathsDefVal)
 }
 func SetDefaultFWBinaries() {
-	FWBinaries.Set(fwBinariesDefVal)
+	_ = FWBinaries.Set(fwBinariesDefVal)
 }
 func SetDefaultFWFilePaths() {
-	FWFilePaths.Set(fwFilePathsDefVal)
+	_ = FWFilePaths.Set(fwFilePathsDefVal)
 }
