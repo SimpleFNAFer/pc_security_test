@@ -44,36 +44,21 @@ jobs:
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
-          $versionFlag = ""
-          if ("${{ github.ref_type }}" -eq "tag") {
-            $versionFlag = "-version ${{ github.ref_name }}"
-          }
-
-          fyne package -os windows --source-dir app -icon assets\Icon.png -release $versionFlag
+          fyne package -os windows --source-dir app -icon assets\Icon.png -release
           dir app
 
       - name: Package Linux binary
         if: matrix.os == 'ubuntu-latest'
         shell: bash
         run: |
-          VERSION_FLAG=""
-          if [ "${{ github.ref_type }}" = "tag" ]; then
-            VERSION_FLAG="-version ${{ github.ref_name }}"
-          fi
-
-          fyne package -os linux --source-dir app -icon assets/Icon.png -release $VERSION_FLAG
+          fyne package -os linux --source-dir app -icon assets/Icon.png -release
           ls -la
 
       - name: Package macOS .app
         if: matrix.os == 'macos-latest'
         shell: bash
         run: |
-          VERSION_FLAG=""
-          if [ "${{ github.ref_type }}" = "tag" ]; then
-            VERSION_FLAG="-version ${{ github.ref_name }}"
-          fi
-
-          fyne package -os darwin --source-dir app -icon assets/Icon.png -release $VERSION_FLAG
+          fyne package -os darwin --source-dir app -icon assets/Icon.png -release
           ls -la
 
       - name: Upload artifact
@@ -105,6 +90,7 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
+          token: ${{ secrets.RELEASE_GITHUB_TOKEN }}
           files: |
             **/*.exe
             **/*.tar.xz
