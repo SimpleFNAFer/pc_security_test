@@ -2,7 +2,6 @@ package ui
 
 import (
 	"fmt"
-	"log"
 	"pc_security_test/command"
 
 	"fyne.io/fyne/v2"
@@ -69,19 +68,26 @@ func (h *historyBlock) awaitHistoryEntries() {
 func (h *historyBlock) saveToFile() {
 	textBytes := []byte(h.textLines.Text)
 
-	dialog.ShowFileSave(func(writer fyne.URIWriteCloser, err error) {
+	fileSaveDlg := dialog.NewFileSave(func(writer fyne.URIWriteCloser, err error) {
 		if err != nil || writer == nil {
 			return
 		}
 
-		defer fyne.LogError("error closing writer", writer.Close())
+		defer func() {
+			if err := writer.Close(); err != nil {
+				fyne.LogError("error closing writer", err)
+			}
+		}()
 
 		_, writeErr := writer.Write(textBytes)
 		if writeErr != nil {
-			log.Println("error writing to file:", writeErr)
+			fyne.LogError("error writing to file", writeErr)
 			return
 		}
 	}, h.master)
+
+	fileSaveDlg.Resize(fyne.NewSize(800, 600))
+	fileSaveDlg.Show()
 }
 
 func (h *historyBlock) clearHistory() {

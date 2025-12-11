@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"pc_security_test/preferences"
 	"slices"
+	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -14,18 +15,20 @@ import (
 )
 
 const (
-	preferencesWindowTitle = "Настройки"
-	commonTitle            = "## Общие"
-	appearanceThemeTitle   = "Тема"
-	queueWorkerNumTitle    = "Количество параллельно запущенных обработчиков"
-	eicarMaxParallelTitle  = "Маскимальное количество одновременных EICAR-тестов"
-	eicarWaitDurationTitle = "Время ожидания удаления EICAR-файла"
-	netTitle               = "## Сеть"
-	defaultHostTitle       = "Адрес по умолчанию"
-	avTitle                = "## Антивирус"
-	fwTitle                = "## Межсетевой экран"
-	binariesTitle          = "Бинарные файлы"
-	filepathsTitle         = "Файловые пути"
+	preferencesWindowTitle   = "Настройки"
+	commonTitle              = "## Общие"
+	appearanceThemeTitle     = "Тема"
+	queueWorkerNumTitle      = "Количество параллельно запущенных обработчиков"
+	eicarMaxParallelTitle    = "Маскимальное количество одновременных EICAR-тестов"
+	eicarWaitDurationTitle   = "Время ожидания удаления EICAR-файла"
+	pingWaitDurationTitle    = "Время ожидания icmp-ответа"
+	fwCheckWaitDurationTitle = "Время ожидания подключения"
+	netTitle                 = "## Сеть"
+	defaultHostTitle         = "Адрес по умолчанию"
+	avTitle                  = "## Антивирус"
+	fwTitle                  = "## Межсетевой экран"
+	binariesTitle            = "Бинарные файлы"
+	filepathsTitle           = "Файловые пути"
 )
 
 type strPrefsEntry struct {
@@ -40,26 +43,39 @@ func NewStrPrefsEntry(data binding.String) *strPrefsEntry {
 	entry.ExtendBaseWidget(entry)
 	entry.OnChanged = entry.onChanged
 	entry.OnSubmitted = entry.onSubmitted
-	text, _ := data.Get()
-	entry.SetText(text)
+	data.AddListener(binding.NewDataListener(func() {
+		text, err := data.Get()
+		if err != nil {
+			fyne.LogError("NewStrPrefsEntry.data.Get", err)
+		}
+		entry.SetText(text)
+	}))
 	return entry
 }
 
 func (e *strPrefsEntry) onChanged(s string) {
 	if err := e.Validate(); err == nil {
-		_ = e.data.Set(s)
+		if err := e.data.Set(s); err != nil {
+			fyne.LogError("onChanged", err)
+		}
 	}
 }
 func (e *strPrefsEntry) FocusLost() {
 	e.Entry.FocusLost()
 	if err := e.Validate(); err != nil {
-		validV, _ := e.data.Get()
+		validV, err := e.data.Get()
+		if err != nil {
+			fyne.LogError("FocusLost.data.Get", err)
+		}
 		e.SetText(validV)
 	}
 }
 func (e *strPrefsEntry) onSubmitted(s string) {
 	if err := e.Validate(); err != nil {
-		validV, _ := e.data.Get()
+		validV, err := e.data.Get()
+		if err != nil {
+			fyne.LogError("onSubmitted.data.Get", err)
+		}
 		e.SetText(validV)
 	}
 }
@@ -67,88 +83,6 @@ func (e *strPrefsEntry) onSubmitted(s string) {
 func OpenPreferencesWindow() {
 	pw := fyne.CurrentApp().NewWindow(preferencesWindowTitle)
 	pw.Resize(fyne.NewSize(400, 800))
-
-	appearanceTheme := widget.NewSelectWithData(preferences.AvailableAppearanceTheme(), preferences.AppearanceTheme)
-	appearanceThemeBlock := container.NewVBox(
-		prefTitleWithResetBtn(appearanceThemeTitle, preferences.SetDefaultAppearanceTheme),
-		appearanceTheme,
-	)
-
-	queueWorkerNum := widget.NewSliderWithData(
-		float64(preferences.QueueWorkerNumMin),
-		float64(preferences.QueueWorkerNumMax),
-		binding.IntToFloat(preferences.QueueWorkerNum),
-	)
-	queueWorkerNum.Step = 1
-	queueWorkerNumBlock := container.NewVBox(
-		prefTitleWithResetBtn(queueWorkerNumTitle, preferences.SetDefaultQueueWorkerNum),
-		sliderValue(preferences.QueueWorkerNum),
-		queueWorkerNum,
-		sliderLegend(preferences.QueueWorkerNumMin, preferences.QueueWorkerNumMax),
-	)
-
-	pingDefaultHost := NewStrPrefsEntry(preferences.PingDefaultHost)
-	pingDefaultHost.Validator = preferences.PingDefaultHostValidator
-	pingBlock := container.NewBorder(
-		prefTitleWithResetBtn(defaultHostTitle, preferences.SetDefaultPingDefaultHost),
-		pingDefaultHost,
-		nil, nil, nil,
-	)
-
-	eicarMaxParallel := widget.NewSliderWithData(
-		float64(preferences.EICARMaxParallelMin),
-		float64(preferences.EICARMaxParallelMax),
-		binding.IntToFloat(preferences.EICARMaxParallel),
-	)
-	eicarMaxParallel.Step = 1
-	eicarMaxParallelBlock := container.NewVBox(
-		prefTitleWithResetBtn(eicarMaxParallelTitle, preferences.SetDefaultEICARMaxParallel),
-		sliderValue(preferences.EICARMaxParallel),
-		eicarMaxParallel,
-		sliderLegend(preferences.EICARMaxParallelMin, preferences.EICARMaxParallelMax),
-	)
-
-	eicarWaitDuration := NewStrPrefsEntry(preferences.EICARWaitDuration)
-	eicarWaitDuration.Validator = preferences.EICARWaitDurationValidator
-	eicarWaitDurationBlock := container.NewVBox(
-		prefTitleWithResetBtn(
-			fmt.Sprintf("%s (от %s до %s включительно)",
-				eicarWaitDurationTitle,
-				preferences.EICARWaitDurationMin,
-				preferences.EICARWaitDurationMax,
-			),
-			preferences.SetDefaultEICARMaxParallel,
-		),
-		eicarWaitDuration,
-	)
-
-	avBinaries := stringListBlock(preferences.AVBinaries, preferences.SetDefaultAVBinaries)
-	avFilePaths := stringListBlock(preferences.AVFilePaths, preferences.SetDefaultAVFilePaths)
-	avTabs := container.NewAppTabs(
-		container.NewTabItem(binariesTitle, avBinaries),
-		container.NewTabItem(filepathsTitle, avFilePaths),
-	)
-	avBlock := container.NewVBox(
-		widget.NewRichTextFromMarkdown(avTitle),
-		eicarMaxParallelBlock,
-		widget.NewSeparator(),
-		eicarWaitDurationBlock,
-		widget.NewSeparator(),
-		avTabs,
-		widget.NewSeparator(),
-	)
-
-	fwBinaries := stringListBlock(preferences.FWBinaries, preferences.SetDefaultFWBinaries)
-	fwFilePaths := stringListBlock(preferences.FWFilePaths, preferences.SetDefaultFWFilePaths)
-	fwTabs := container.NewAppTabs(
-		container.NewTabItem(binariesTitle, fwBinaries),
-		container.NewTabItem(filepathsTitle, fwFilePaths),
-	)
-	fwBlock := container.NewVBox(
-		widget.NewRichTextFromMarkdown(fwTitle),
-		fwTabs,
-		widget.NewSeparator(),
-	)
 
 	restoreAllBtn := widget.NewButtonWithIcon("Сбросить все", theme.ContentUndoIcon(), preferences.SetDefaultAll)
 	restoreAllBtn.Importance = widget.DangerImportance
@@ -162,15 +96,16 @@ func OpenPreferencesWindow() {
 			container.NewVBox(
 				container.NewHBox(layout.NewSpacer(), restoreAllBtn),
 				widget.NewRichTextFromMarkdown(commonTitle),
-				appearanceThemeBlock,
+				appearanceThemeBlock(),
 				widget.NewSeparator(),
-				queueWorkerNumBlock,
+				queueWorkerNumBlock(),
 				widget.NewSeparator(),
 				widget.NewRichTextFromMarkdown(netTitle),
-				pingBlock,
+				pingDefaultHostBlock(),
+				pingWaitDurationBlock(),
 				widget.NewSeparator(),
-				avBlock,
-				fwBlock,
+				avBlock(),
+				fwBlock(),
 			),
 		),
 	)
@@ -179,6 +114,140 @@ func OpenPreferencesWindow() {
 	pw.CenterOnScreen()
 	pw.SetContent(scroll)
 	pw.Show()
+}
+
+func appearanceThemeBlock() *fyne.Container {
+	appearanceTheme := widget.NewSelectWithData(preferences.AvailableAppearanceTheme(), preferences.AppearanceTheme)
+	return container.NewVBox(
+		prefTitleWithResetBtn(appearanceThemeTitle, preferences.SetDefaultAppearanceTheme),
+		appearanceTheme,
+	)
+}
+
+func queueWorkerNumBlock() *fyne.Container {
+	queueWorkerNum := widget.NewSliderWithData(
+		float64(preferences.QueueWorkerNumMin),
+		float64(preferences.QueueWorkerNumMax),
+		binding.IntToFloat(preferences.QueueWorkerNum),
+	)
+	queueWorkerNum.Step = 1
+	return container.NewVBox(
+		prefTitleWithResetBtn(
+			fmt.Sprintf("%s (изменится после перезапуска)", queueWorkerNumTitle),
+			preferences.SetDefaultQueueWorkerNum),
+		sliderValue(preferences.QueueWorkerNum),
+		queueWorkerNum,
+		sliderLegend(preferences.QueueWorkerNumMin, preferences.QueueWorkerNumMax),
+	)
+}
+
+func pingDefaultHostBlock() *fyne.Container {
+	pingDefaultHost := NewStrPrefsEntry(preferences.PingDefaultHost)
+	pingDefaultHost.Validator = preferences.HostValidator
+	return container.NewBorder(
+		prefTitleWithResetBtn(defaultHostTitle, preferences.SetDefaultPingDefaultHost),
+		pingDefaultHost,
+		nil, nil, nil,
+	)
+}
+
+func pingWaitDurationBlock() *fyne.Container {
+	return durationBlock(
+		pingWaitDurationTitle,
+		preferences.PingWaitDurationMin,
+		preferences.PingWaitDurationMax,
+		preferences.PingWaitDuration,
+		preferences.PingWaitDurationValidator,
+		preferences.SetDefaultPingWaitDuration,
+	)
+}
+
+func eicarMaxParallelBlock() *fyne.Container {
+	eicarMaxParallel := widget.NewSliderWithData(
+		float64(preferences.EICARMaxParallelMin),
+		float64(preferences.EICARMaxParallelMax),
+		binding.IntToFloat(preferences.EICARMaxParallel),
+	)
+	eicarMaxParallel.Step = 1
+	return container.NewVBox(
+		prefTitleWithResetBtn(eicarMaxParallelTitle, preferences.SetDefaultEICARMaxParallel),
+		sliderValue(preferences.EICARMaxParallel),
+		eicarMaxParallel,
+		sliderLegend(preferences.EICARMaxParallelMin, preferences.EICARMaxParallelMax),
+	)
+}
+
+func eicarWaitDurationBlock() *fyne.Container {
+	return durationBlock(
+		eicarWaitDurationTitle,
+		preferences.EICARWaitDurationMin,
+		preferences.EICARWaitDurationMax,
+		preferences.EICARWaitDuration,
+		preferences.EICARWaitDurationValidator,
+		preferences.SetDefaultEICARWaitDuration,
+	)
+}
+
+func fwCheckWaitDurationBlock() *fyne.Container {
+	return durationBlock(
+		fwCheckWaitDurationTitle,
+		preferences.FWCheckWaitDurationMin,
+		preferences.FWCheckWaitDurationMax,
+		preferences.FWCheckWaitDuration,
+		preferences.FWCheckWaitDurationValidator,
+		preferences.SetDefaultFWCheckWaitDuration,
+	)
+}
+
+type tabsParams struct {
+	title string
+	data  binding.StringList
+	reset func()
+}
+
+func tabs(tabs ...tabsParams) *container.AppTabs {
+	c := container.NewAppTabs()
+	for _, tp := range tabs {
+		l := stringListBlock(tp.data, tp.reset)
+		c.Append(container.NewTabItem(tp.title, l))
+	}
+	return c
+}
+
+func avTabs() *container.AppTabs {
+	return tabs(
+		tabsParams{title: binariesTitle, data: preferences.AVBinaries, reset: preferences.SetDefaultAVBinaries},
+		tabsParams{title: filepathsTitle, data: preferences.AVFilePaths, reset: preferences.SetDefaultAVFilePaths},
+	)
+}
+
+func fwTabs() *container.AppTabs {
+	return tabs(
+		tabsParams{title: binariesTitle, data: preferences.FWBinaries, reset: preferences.SetDefaultFWBinaries},
+		tabsParams{title: filepathsTitle, data: preferences.FWFilePaths, reset: preferences.SetDefaultFWFilePaths},
+	)
+}
+
+func avBlockCommon() *fyne.Container {
+	return container.NewVBox(
+		widget.NewRichTextFromMarkdown(avTitle),
+		eicarMaxParallelBlock(),
+		widget.NewSeparator(),
+		eicarWaitDurationBlock(),
+		widget.NewSeparator(),
+		avTabs(),
+		widget.NewSeparator(),
+	)
+}
+
+func fwBlockCommon() *fyne.Container {
+	return container.NewVBox(
+		widget.NewRichTextFromMarkdown(fwTitle),
+		fwCheckWaitDurationBlock(),
+		widget.NewSeparator(),
+		fwTabs(),
+		widget.NewSeparator(),
+	)
 }
 
 func sliderLegend(min, max int) *fyne.Container {
@@ -215,17 +284,27 @@ func stringListBlock(strList binding.StringList, reset func()) *fyne.Container {
 	entry := widget.NewEntry()
 	addBtn := widget.NewButtonWithIcon("", theme.ContentAddIcon(), func() {
 		text := entry.Text
-		strSlice, _ := strList.Get()
+		strSlice, err := strList.Get()
+		if err != nil {
+			fyne.LogError("addBtn.strList.Get", err)
+		}
 		if text != "" && !slices.Contains(strSlice, text) {
-			_ = strList.Append(text)
+			if err := strList.Append(text); err != nil {
+				fyne.LogError("stringListBlock.strList.Append", err)
+			}
 		}
 		entry.SetText("")
 	})
 	rmBtn := widget.NewButtonWithIcon("", theme.ContentRemoveIcon(), func() {
 		text := entry.Text
-		strSlice, _ := strList.Get()
+		strSlice, err := strList.Get()
+		if err != nil {
+			fyne.LogError("rmBtn.strList.Get", err)
+		}
 		if text != "" && slices.Contains(strSlice, text) {
-			_ = strList.Remove(text)
+			if err := strList.Remove(text); err != nil {
+				fyne.LogError("stringListBlock.strList.Remove", err)
+			}
 		}
 		entry.SetText("")
 		list.UnselectAll()
@@ -236,7 +315,10 @@ func stringListBlock(strList binding.StringList, reset func()) *fyne.Container {
 	)
 	list.OnUnselected = func(id widget.ListItemID) { rmBtn.Disable() }
 	list.OnSelected = func(id widget.ListItemID) {
-		selectedItemText, _ := strList.GetValue(id)
+		selectedItemText, err := strList.GetValue(id)
+		if err != nil {
+			fyne.LogError("list.OnSelected.strList.GetValue", err)
+		}
 		entry.SetText(selectedItemText)
 		rmBtn.Enable()
 	}
@@ -256,5 +338,20 @@ func resetBtn(reset func()) *widget.Button {
 }
 
 func prefTitleWithResetBtn(title string, reset func()) *fyne.Container {
-	return container.NewBorder(nil, nil, resetBtn(reset), nil, widget.NewLabel(title))
+	titleLabel := widget.NewLabel(title)
+	titleLabel.Wrapping = fyne.TextWrapWord
+	return container.NewBorder(nil, nil, resetBtn(reset), nil, titleLabel)
+}
+
+func durationBlock(
+	title string, min, max time.Duration, data binding.String, validator func(v string) error, setDefault func(),
+) *fyne.Container {
+	e := NewStrPrefsEntry(data)
+	e.Validator = validator
+	return container.NewVBox(
+		prefTitleWithResetBtn(
+			fmt.Sprintf("%s (от %s до %s включительно)", title, min, max),
+			setDefault,
+		), e,
+	)
 }

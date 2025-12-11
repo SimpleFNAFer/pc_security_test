@@ -86,7 +86,10 @@ func (b *searchBlock) recountTemplateLen() {
 			b.templateLen = utf8.RuneCountInString(tc.title)
 		}
 		for i := range tc.rows.Length() {
-			v, _ := tc.rows.GetValue(i)
+			v, err := tc.rows.GetValue(i)
+			if err != nil {
+				fyne.LogError("recountTemplateLen.rows.GetValue", err)
+			}
 			if utf8.RuneCountInString(v) > b.templateLen {
 				b.templateLen = utf8.RuneCountInString(v)
 			}
@@ -108,7 +111,16 @@ func (b *searchBlock) createItem() fyne.CanvasObject {
 
 func (b *searchBlock) updateItem(tci widget.TableCellID, co fyne.CanvasObject) {
 	col := b.cols[tci.Col]
-	rowText, _ := col.rows.GetValue(tci.Row)
+	var rowText string
+	var err error
+
+	if tci.Row < col.rows.Length() {
+		rowText, err = col.rows.GetValue(tci.Row)
+		if err != nil {
+			fyne.LogError("updateItem.rows.GetValue", err)
+		}
+	}
+
 	co.(*widget.Label).Text = rowText
 	co.(*widget.Label).Importance = b.results.Get(rowText)
 	co.(*widget.Label).Refresh()
@@ -136,7 +148,10 @@ func (b *searchBlock) awaitAndUpdateUI() {
 
 func (b *searchBlock) fillResults(res command.SearchResponse) {
 	for _, col := range b.cols {
-		strs, _ := col.rows.Get()
+		strs, err := col.rows.Get()
+		if err != nil {
+			fyne.LogError("fillResults.rows.Get", err)
+		}
 		for _, s := range strs {
 			if _, ok := res.Found[s]; ok {
 				b.results.Set(s, widget.SuccessImportance)

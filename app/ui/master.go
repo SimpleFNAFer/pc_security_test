@@ -27,7 +27,7 @@ func InitMasterWindow(app fyne.App) {
 
 	pingBlock := newPingBlock()
 	searchFWBlock := newSearchFWBlock()
-	// testFWBlock := newTestFWBlock()
+	checkFWBlock := newCheckFWBlock()
 	searchAVBlock := newSearchAVBlock()
 	eicarBlock := newEICARBlock()
 
@@ -71,15 +71,18 @@ func InitMasterWindow(app fyne.App) {
 				},
 				container.NewVBox(
 					searchFWBlock.getContainer(),
-					// layout.NewSpacer(),
-					// testFWBlock.getContainer(),
+					widget.NewSeparator(),
+					checkFWBlock.getContainer(),
 				),
 			)),
 	)
 
 	toggleThemeBtn := widget.NewButtonWithIcon("", monitorIcon, CT.toggleThemeVariant)
 	preferences.AppearanceTheme.AddListener(binding.NewDataListener(func() {
-		t, _ := preferences.AppearanceTheme.Get()
+		t, err := preferences.AppearanceTheme.Get()
+		if err != nil {
+			fyne.LogError("InitMasterWindow.AppearanceTheme.Get", err)
+		}
 		switch t {
 		case preferences.AppearanceThemeLight:
 			toggleThemeBtn.SetIcon(lightModeIcon)

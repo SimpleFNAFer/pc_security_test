@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -18,7 +19,7 @@ import (
 )
 
 func Ping(host string) (bool, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), preferences.GetPingWaitDuration())
 	defer cancel()
 
 	available := false
@@ -34,17 +35,19 @@ func Ping(host string) (bool, error) {
 	scanner := bufio.NewScanner(outPipe)
 	for scanner.Scan() {
 		line := scanner.Text()
-		fmt.Println(line)
-
 		if strings.Contains(line, "time=") {
 			available = true
-			_ = cmd.Process.Signal(os.Interrupt)
+			if err := cmd.Process.Signal(os.Interrupt); err != nil {
+				fyne.LogError("Ping.cmd.Process.Signal(os.Interrupt)", err)
+			}
 		}
 	}
 	if err := scanner.Err(); err != nil {
 		return false, err
 	}
-	_ = cmd.Wait()
+	if err := cmd.Wait(); err != nil {
+		fyne.LogError("Ping.cmd.Wait", err)
+	}
 
 	return available, nil
 }
@@ -85,16 +88,26 @@ const (
 )
 
 func FindBinariesAndPaths(st sourceType) map[string]string {
+	var err error
 	binaries := []string{}
 	paths := []string{}
 
 	switch st {
 	case SourceTypeFW:
-		binaries, _ = preferences.FWBinaries.Get()
-		paths, _ = preferences.FWFilePaths.Get()
+		if binaries, err = preferences.FWBinaries.Get(); err != nil {
+			fyne.LogError("FindBinariesAndPaths.FWBinaries", err)
+		}
+		if paths, err = preferences.FWFilePaths.Get(); err != nil {
+			fyne.LogError("FindBinariesAndPaths.FWFilePaths", err)
+		}
+
 	case SourceTypeAV:
-		binaries, _ = preferences.AVBinaries.Get()
-		paths, _ = preferences.AVFilePaths.Get()
+		if binaries, err = preferences.AVBinaries.Get(); err != nil {
+			fyne.LogError("FindBinariesAndPaths.AVBinaries", err)
+		}
+		if paths, err = preferences.AVFilePaths.Get(); err != nil {
+			fyne.LogError("FindBinariesAndPaths.AVFilePaths", err)
+		}
 	}
 
 	binariesFound := findBinariesPaths(binaries)
@@ -113,7 +126,11 @@ var (
 func checkMaxParallelEICARTests() error {
 	eicarCounterMu.RLock()
 	defer eicarCounterMu.RUnlock()
-	if m, _ := preferences.EICARMaxParallel.Get(); currParallelEICARTests > m {
+	m, err := preferences.EICARMaxParallel.Get()
+	if err != nil {
+		fyne.LogError("checkMaxParallelEICARTests.EICARMaxParallel.Get", err)
+	}
+	if currParallelEICARTests > m {
 		return errors.New("Дождитесь завершения предыдущего EICAR теста")
 	}
 	return nil
@@ -178,4 +195,37 @@ func RemoveEICARs() {
 			fyne.LogError("error rm eicar file", err)
 		}
 	}
+}
+
+func FWTest(host, port string, proto preferences.Protocol) (bool, error) {
+	if port == "" {
+		port = preferences.DefaultPort[proto]
+	}
+
+	hostType, err := preferences.DetectHostType(host)
+	if err != nil {
+		return false, err
+	}
+	if hostType == preferences.HostTypeIPv6 {
+		proto += "6"
+	}
+
+	var addr strings.Builder
+	addr.WriteString(host)
+	addr.WriteString(":" + port)
+
+	conn, err := net.DialTimeout(string(proto), addr.String(), preferences.GetFWCheckWaitDuration())
+	if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+		return true, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	defer func() {
+		if err := conn.Close(); err != nil {
+			fyne.LogError("FWTest.conn.Close", err)
+		}
+	}()
+
+	return false, nil
 }

@@ -36,9 +36,9 @@ func findAVResponseToHistoryEntry(fAVRes SearchResponse) Entry {
 		avsStr = fmt.Sprintf("антивирус(-ы): %s", strings.Join(avs, "; "))
 	}
 
-	errStr := "успешное выполнение проверки"
+	errStr := "проверка прошла без ошибок"
 	if fAVRes.Error != nil {
-		errStr = fmt.Sprintf("ошибка: %s", fAVRes.Error.Error())
+		errStr = fmt.Sprintf("во время проверки произошла ошибка: %s", fAVRes.Error.Error())
 	}
 	return Entry{
 		Timestamp: time.Now(),

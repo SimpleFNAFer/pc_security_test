@@ -44,16 +44,16 @@ func pingRequestToHistoryEntry(pReq PingRequest) Entry {
 
 func pingResponseToHistoryEntry(pRes PingResponse) Entry {
 	availableStr := fmt.Sprintf("есть доступ к %s", pRes.Host)
-	errStr := "успешное выполнение проверки"
+	errStr := "проверка прошла без ошибок"
 	if !pRes.Available {
 		availableStr = fmt.Sprintf("нет доступа к %s", pRes.Host)
 	}
 	if pRes.Error != nil {
-		errStr = fmt.Sprintf("ошибка: %s", pRes.Error.Error())
+		errStr = fmt.Sprintf("во время проверки произошла ошибка: %s", pRes.Error.Error())
 	}
 	return Entry{
 		Timestamp: time.Now(),
-		Value:     fmt.Sprintf("%s\t|\tРезультат: %s, %s", pRes.ID.String(), availableStr, errStr),
+		Value:     fmt.Sprintf("%s\t|\tРезультат: %s; %s", pRes.ID.String(), availableStr, errStr),
 	}
 }
 

@@ -2,10 +2,11 @@ package preferences
 
 import (
 	"errors"
-	"net"
+	"net/netip"
 	"regexp"
 	"runtime"
 	"slices"
+	"strconv"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -22,7 +23,7 @@ var (
 	ErrorWrongArg       = errors.New("wrong arg")
 )
 
-func CheckInitAppPrefs(a fyne.App) {
+func checkInitCommonAppPrefs(a fyne.App) {
 	// appearance.theme
 	checkInitStringInAppPrefs(
 		a, appearanceThemeKey, appearanceThemeDefVal, AppearanceThemeLight, AppearanceThemeDark,
@@ -39,6 +40,12 @@ func CheckInitAppPrefs(a fyne.App) {
 	checkInitStringInAppPrefs(a, pingDefaultHostKey, pingDefaultHostDefVal)
 	PingDefaultHost = binding.BindPreferenceString(pingDefaultHostKey, a.Preferences())
 
+	// ping.wait_duration
+	checkInitDurationInAppPrefs(
+		a, pingWaitDurationKey, pingWaitDurationDefVal, &PingWaitDurationMin, &PingWaitDurationMax,
+	)
+	PingWaitDuration = binding.BindPreferenceString(pingWaitDurationKey, a.Preferences())
+
 	// eicar.max_parallel
 	checkInitIntInAppPrefs(
 		a, eicarMaxParallelKey, eicarMaxParallelDefVal, &EICARMaxParallelMin, &EICARMaxParallelMax,
@@ -50,6 +57,12 @@ func CheckInitAppPrefs(a fyne.App) {
 		a, eicarWaitDurationKey, eicarWaitDurationDefVal, &EICARWaitDurationMin, &EICARWaitDurationMax,
 	)
 	EICARWaitDuration = binding.BindPreferenceString(eicarWaitDurationKey, a.Preferences())
+
+	// fw.check.wait_duration
+	checkInitDurationInAppPrefs(
+		a, fwCheckWaitDurationKey, fwCheckWaitDurationDefVal, &FWCheckWaitDurationMin, &FWCheckWaitDurationMax,
+	)
+	FWCheckWaitDuration = binding.BindPreferenceString(fwCheckWaitDurationKey, a.Preferences())
 
 	// av.binaries
 	checkInitStringSliceInAppPrefs(
@@ -118,12 +131,84 @@ func slicesEqual[T comparable](a, b []T) bool {
 	return true
 }
 
-func SetDefaultAll() {
+type HostType int
+
+const (
+	HostTypeInvalid HostType = iota
+	HostTypeIPv4
+	HostTypeIPv6
+	HostTypeDN
+)
+
+func DetectHostType(host string) (HostType, error) {
+	if ip, err := netip.ParseAddr(host); err == nil {
+		switch {
+		case ip.Is4():
+			return HostTypeIPv4, nil
+		case ip.Is6():
+			return HostTypeIPv6, nil
+		}
+	}
+	if domainRegexp.MatchString(host) {
+		return HostTypeDN, nil
+	}
+
+	return HostTypeInvalid, errors.New("невалидный адрес")
+}
+
+func HostValidator(v string) error {
+	_, err := DetectHostType(v)
+	return err
+}
+
+func MinMaxDurValidator(min, max time.Duration) func(v string) error {
+	return func(v string) error {
+		dur, err := time.ParseDuration(v)
+		if err != nil {
+			return errors.New("не является временным промежутком")
+		}
+		if dur < min ||
+			dur > max {
+			return errors.New("значение за пределами допустимого диапазона")
+		}
+		return nil
+	}
+}
+
+func MinMaxIntValidator(min, max int) func(v string) error {
+	return func(v string) error {
+		d, err := strconv.Atoi(v)
+		if err != nil {
+			return errors.New("не является целым числом")
+		}
+		if d < min ||
+			d > max {
+			return errors.New("значение за пределами допустимого диапазона")
+		}
+		return nil
+	}
+}
+
+type Protocol string
+
+const (
+	TCP Protocol = "tcp"
+	UDP Protocol = "udp"
+)
+
+var (
+	Protocols   = []string{string(TCP), string(UDP)}
+	DefaultPort = map[Protocol]string{TCP: "443", UDP: "53"}
+)
+
+func setDefaultAllCommon() {
 	SetDefaultAppearanceTheme()
 	SetDefaultQueueWorkerNum()
 	SetDefaultPingDefaultHost()
+	SetDefaultPingWaitDuration()
 	SetDefaultEICARMaxParallel()
 	SetDefaultEICARWaitDuration()
+	SetDefaultFWCheckWaitDuration()
 	SetDefaultAVBinaries()
 	SetDefaultAVFilePaths()
 	SetDefaultFWBinaries()
@@ -145,7 +230,9 @@ func AvailableAppearanceTheme() []string {
 	return []string{AppearanceThemeLight, AppearanceThemeDark, AppearanceThemeSystem}
 }
 func SetDefaultAppearanceTheme() {
-	_ = AppearanceTheme.Set(appearanceThemeDefVal)
+	if err := AppearanceTheme.Set(appearanceThemeDefVal); err != nil {
+		fyne.LogError("SetDefaultAppearanceTheme", err)
+	}
 }
 
 // queue.worker_num
@@ -164,7 +251,9 @@ var (
 )
 
 func SetDefaultQueueWorkerNum() {
-	_ = QueueWorkerNum.Set(queueWorkerNumDefVal)
+	if err := QueueWorkerNum.Set(queueWorkerNumDefVal); err != nil {
+		fyne.LogError("SetDefaultQueueWorkerNum", err)
+	}
 }
 
 // ping.default_host
@@ -178,18 +267,40 @@ var (
 	PingDefaultHost binding.String
 )
 
-func PingDefaultHostValidator(v string) error {
-	if ip := net.ParseIP(v); ip != nil {
-		return nil
-	}
-	if isDN := domainRegexp.MatchString(v); isDN {
-		return nil
-	}
-
-	return errors.New("invalid ip or address")
-}
 func SetDefaultPingDefaultHost() {
-	_ = PingDefaultHost.Set(pingDefaultHostDefVal)
+	if err := PingDefaultHost.Set(pingDefaultHostDefVal); err != nil {
+		fyne.LogError("SetDefaultPingDefaultHost", err)
+	}
+}
+
+// ping.wait_duration
+const pingWaitDurationKey = "ping.wait_duration"
+
+var (
+	PingWaitDurationMin    = 1 * time.Second
+	PingWaitDurationMax    = 10 * time.Second
+	pingWaitDurationDefVal = 3 * time.Second
+	PingWaitDuration       binding.String
+)
+
+func PingWaitDurationValidator(v string) error {
+	return MinMaxDurValidator(PingWaitDurationMin, PingWaitDurationMax)(v)
+}
+func GetPingWaitDuration() time.Duration {
+	strDur, err := PingWaitDuration.Get()
+	if err != nil {
+		return pingWaitDurationDefVal
+	}
+	dur, err := time.ParseDuration(strDur)
+	if err != nil {
+		return pingWaitDurationDefVal
+	}
+	return dur
+}
+func SetDefaultPingWaitDuration() {
+	if err := PingWaitDuration.Set(pingWaitDurationDefVal.String()); err != nil {
+		fyne.LogError("SetDefaultPingWaitDuration", err)
+	}
 }
 
 // eicar.max_parallel
@@ -203,7 +314,9 @@ var (
 )
 
 func SetDefaultEICARMaxParallel() {
-	_ = EICARMaxParallel.Set(eicarMaxParallelDefVal)
+	if err := EICARMaxParallel.Set(eicarMaxParallelDefVal); err != nil {
+		fyne.LogError("SetDefaultEICARMaxParallel", err)
+	}
 }
 
 // eicar.wait_duration
@@ -217,18 +330,13 @@ var (
 )
 
 func EICARWaitDurationValidator(v string) error {
-	dur, err := time.ParseDuration(v)
-	if err != nil {
-		return err
-	}
-	if dur < EICARWaitDurationMin ||
-		dur > EICARWaitDurationMax {
-		return errors.New("out of range")
-	}
-	return nil
+	return MinMaxDurValidator(EICARWaitDurationMin, EICARWaitDurationMax)(v)
 }
 func GetEICARWaitDuration() time.Duration {
-	strDur, _ := EICARWaitDuration.Get()
+	strDur, err := EICARWaitDuration.Get()
+	if err != nil {
+		return eicarWaitDurationDefVal
+	}
 	dur, err := time.ParseDuration(strDur)
 	if err != nil {
 		return eicarWaitDurationDefVal
@@ -236,7 +344,39 @@ func GetEICARWaitDuration() time.Duration {
 	return dur
 }
 func SetDefaultEICARWaitDuration() {
-	_ = EICARWaitDuration.Set(eicarWaitDurationDefVal.String())
+	if err := EICARWaitDuration.Set(eicarWaitDurationDefVal.String()); err != nil {
+		fyne.LogError("SetDefaultEICARWaitDuration", err)
+	}
+}
+
+// fw.check.wait_duration
+const fwCheckWaitDurationKey = "fw.check.wait_duration"
+
+var (
+	FWCheckWaitDurationMin    = 1 * time.Second
+	FWCheckWaitDurationMax    = 10 * time.Second
+	fwCheckWaitDurationDefVal = 3 * time.Second
+	FWCheckWaitDuration       binding.String
+)
+
+func FWCheckWaitDurationValidator(v string) error {
+	return MinMaxDurValidator(FWCheckWaitDurationMin, FWCheckWaitDurationMax)(v)
+}
+func GetFWCheckWaitDuration() time.Duration {
+	strDur, err := FWCheckWaitDuration.Get()
+	if err != nil {
+		return fwCheckWaitDurationDefVal
+	}
+	dur, err := time.ParseDuration(strDur)
+	if err != nil {
+		return fwCheckWaitDurationDefVal
+	}
+	return dur
+}
+func SetDefaultFWCheckWaitDuration() {
+	if err := FWCheckWaitDuration.Set(fwCheckWaitDurationDefVal.String()); err != nil {
+		fyne.LogError("SetDefaultFWCheckWaitDuration", err)
+	}
 }
 
 // av.binaries
@@ -258,14 +398,22 @@ var (
 )
 
 func SetDefaultAVBinaries() {
-	_ = AVBinaries.Set(avBinariesDefVal)
+	if err := AVBinaries.Set(avBinariesDefVal); err != nil {
+		fyne.LogError("SetDefaultAVBinaries", err)
+	}
 }
 func SetDefaultAVFilePaths() {
-	_ = AVFilePaths.Set(avFilePathsDefVal)
+	if err := AVFilePaths.Set(avFilePathsDefVal); err != nil {
+		fyne.LogError("SetDefaultAVFilePaths", err)
+	}
 }
 func SetDefaultFWBinaries() {
-	_ = FWBinaries.Set(fwBinariesDefVal)
+	if err := FWBinaries.Set(fwBinariesDefVal); err != nil {
+		fyne.LogError("SetDefaultFWBinaries", err)
+	}
 }
 func SetDefaultFWFilePaths() {
-	_ = FWFilePaths.Set(fwFilePathsDefVal)
+	if err := FWFilePaths.Set(fwFilePathsDefVal); err != nil {
+		fyne.LogError("SetDefaultFWFilePaths", err)
+	}
 }

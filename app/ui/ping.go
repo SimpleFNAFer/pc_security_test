@@ -33,7 +33,10 @@ func newPingBlock() *pingBlock {
 
 	hostInput := widget.NewEntry()
 	preferences.PingDefaultHost.AddListener(binding.NewDataListener(func() {
-		ph, _ := preferences.PingDefaultHost.Get()
+		ph, err := preferences.PingDefaultHost.Get()
+		if err != nil {
+			fyne.LogError("listener.PingDefaultHost.Get", err)
+		}
 		hostInput.SetPlaceHolder(ph)
 	}))
 

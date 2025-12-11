@@ -3,6 +3,7 @@ package command
 import (
 	"pc_security_test/preferences"
 
+	"fyne.io/fyne/v2"
 	"github.com/google/uuid"
 )
 
@@ -42,7 +43,10 @@ func queueWorker() {
 }
 
 func ProcessQueue() {
-	maxNum, _ := preferences.QueueWorkerNum.Get()
+	maxNum, err := preferences.QueueWorkerNum.Get()
+	if err != nil {
+		fyne.LogError("ProcessQueue.QueueWorkerNum.Get", err)
+	}
 	for range maxNum {
 		go queueWorker()
 	}

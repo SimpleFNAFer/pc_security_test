@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"pc_security_test/preferences"
 	"pc_security_test/tester"
 	"strings"
 	"time"
@@ -37,9 +38,9 @@ func findFWResponseToHistoryEntry(fFWRes SearchResponse) Entry {
 		fwsStr = fmt.Sprintf("межсетевой(-ые) экран(-ы): %s", strings.Join(fws, "; "))
 	}
 
-	errStr := "успешное выполнение проверки"
+	errStr := "проверка прошла без ошибок"
 	if fFWRes.Error != nil {
-		errStr = fmt.Sprintf("ошибка: %s", fFWRes.Error.Error())
+		errStr = fmt.Sprintf("во время проверки произошла ошибка: %s", fFWRes.Error.Error())
 	}
 	return Entry{
 		Timestamp: time.Now(),
@@ -52,26 +53,32 @@ func AwaitFindFWResponse() SearchResponse {
 }
 
 type TestFWRequest struct {
-	ID   uuid.UUID
-	Host string
+	ID       uuid.UUID
+	Protocol preferences.Protocol
+	Host     string
+	Port     string
 }
 type TestFWResponse struct {
-	ID        uuid.UUID
-	Host      string
-	Available bool
-	Error     error
+	ID          uuid.UUID
+	Protocol    preferences.Protocol
+	Host        string
+	Port        string
+	Unavailable bool
+	Error       error
 }
 
 var testFWResponses = make(chan TestFWResponse)
 
 func ProcessTestFWRequest(req TestFWRequest) {
-	available, err := tester.Ping(req.Host)
+	unavailable, err := tester.FWTest(req.Host, req.Port, req.Protocol)
 
 	res := TestFWResponse{
-		ID:        req.ID,
-		Host:      req.Host,
-		Available: available,
-		Error:     err,
+		ID:          req.ID,
+		Protocol:    req.Protocol,
+		Host:        req.Host,
+		Port:        req.Port,
+		Unavailable: unavailable,
+		Error:       err,
 	}
 
 	go AddHistoryEntry(testFWResponseToHistoryEntry(res))
@@ -79,20 +86,33 @@ func ProcessTestFWRequest(req TestFWRequest) {
 }
 
 func testFWRequestToHistoryEntry(req TestFWRequest) Entry {
+	var reqStr strings.Builder
+	reqStr.WriteString("хост: " + req.Host)
+	if req.Port != "" {
+		reqStr.WriteString(", порт: " + req.Port)
+	}
+	reqStr.WriteString(fmt.Sprintf(", протокол: %s", req.Protocol))
 	return Entry{
 		Timestamp: time.Now(),
-		Value:     fmt.Sprintf("%s\t|\tПроверка работоспособности МЭ, хост: %s", req.ID, req.Host),
+		Value:     fmt.Sprintf("%s\t|\tПроверка работы МЭ: %s", req.ID, reqStr.String()),
 	}
 }
 
 func testFWResponseToHistoryEntry(res TestFWResponse) Entry {
-	availableStr := fmt.Sprintf("есть доступ к %s", res.Host)
-	errStr := "успешное выполнение проверки"
-	if !res.Available {
-		availableStr = fmt.Sprintf("МЭ работает корректно, нет доступа к %s", res.Host)
+	var resStr strings.Builder
+	resStr.WriteString("к хосту " + res.Host)
+	if res.Port != "" {
+		resStr.WriteString(fmt.Sprintf(" (порт: %s)", res.Port))
+	}
+	resStr.WriteString(fmt.Sprintf(" по протоколу %s", res.Protocol))
+
+	availableStr := fmt.Sprintf("МЭ работает некорректно, есть доступ %s", resStr.String())
+	errStr := "проверка прошла без ошибок"
+	if res.Unavailable {
+		availableStr = fmt.Sprintf("МЭ работает корректно, нет доступа %s", res.Host)
 	}
 	if res.Error != nil {
-		errStr = fmt.Sprintf("ошибка: %s", res.Error.Error())
+		errStr = fmt.Sprintf("во время проверки произошла ошибка: %s", res.Error.Error())
 	}
 	return Entry{
 		Timestamp: time.Now(),

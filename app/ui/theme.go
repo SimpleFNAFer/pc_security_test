@@ -22,7 +22,11 @@ func initAndSetCustomTheme() {
 }
 
 func (ct *customTheme) Color(tcn fyne.ThemeColorName, tv fyne.ThemeVariant) color.Color {
-	t, _ := preferences.AppearanceTheme.Get()
+	t, err := preferences.AppearanceTheme.Get()
+	if err != nil {
+		fyne.LogError("Color.AppearanceTheme.Get", err)
+	}
+
 	switch t {
 	case preferences.AppearanceThemeDark:
 		return theme.DefaultTheme().Color(tcn, theme.VariantDark)
@@ -47,9 +51,14 @@ func (ct *customTheme) Size(tsn fyne.ThemeSizeName) float32 {
 
 func (ct *customTheme) toggleThemeVariant() {
 	avail := preferences.AvailableAppearanceTheme()
-	t, _ := preferences.AppearanceTheme.Get()
+	t, err := preferences.AppearanceTheme.Get()
+	if err != nil {
+		fyne.LogError("toggleThemeVariant.AppearanceTheme.Get", err)
+	}
 	ti := slices.Index(avail, t)
 	newTI := (ti - 1 + len(avail)) % len(avail)
 	newT := avail[newTI]
-	_ = preferences.AppearanceTheme.Set(newT)
+	if err := preferences.AppearanceTheme.Set(newT); err != nil {
+		fyne.LogError("toggleThemeVariant.AppearanceTheme.Set", err)
+	}
 }
