@@ -19,12 +19,14 @@ const (
 func avBlock() *fyne.Container {
 	b := avBlockCommon()
 	b.Add(prefBoolBlock(avSearchDefaultTitle, preferences.AVSearchDefault, preferences.SetDefaultAVSearchDefault))
+	b.Add(widget.NewSeparator())
 	return b
 }
 
 func fwBlock() *fyne.Container {
 	b := fwBlockCommon()
 	b.Add(prefBoolBlock(fwSearchDefaultTitle, preferences.FWSearchDefault, preferences.SetDefaultFWSearchDefault))
+	b.Add(widget.NewSeparator())
 	return b
 }
 

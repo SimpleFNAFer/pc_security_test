@@ -43,7 +43,9 @@ func eicarResponseToHistoryEntry(eRes EICARResponse) Entry {
 	resStr := "тест пройден"
 	errStr := "проверка прошла без ошибок"
 	if !eRes.Passed {
-		resStr = "тест не пройден"
+		resStr =
+			"eicar файл не был удалён антивирусной программой за ожидаемое время, проверьте уведомления, " +
+				"тест успешно пройден, если антивирус обнаружил файл и вывел предупреждение"
 	}
 	if eRes.Error != nil {
 		errStr = fmt.Sprintf("во время проверки произошла ошибка: %s", eRes.Error.Error())

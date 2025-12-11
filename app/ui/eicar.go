@@ -62,7 +62,7 @@ func (e *eicarBlock) awaitAndUpdateUI() {
 			e.resultOutput.Text = "EICAR-тест пройден успешно. Антивирус работает"
 			e.resultOutput.Importance = widget.SuccessImportance
 		default:
-			e.resultOutput.Text = "EICAR-тест не пройден. Антивирус не работает"
+			e.resultOutput.Text = "Проверьте уведомления. Тест успешно пройден, если антивирус вывел предупреждение"
 			e.resultOutput.Importance = widget.WarningImportance
 		}
 		e.resultOutput.Refresh()
