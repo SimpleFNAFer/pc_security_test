@@ -73,6 +73,8 @@ jobs:
   release:
     if: github.ref_type == 'tag'
     needs: build
+    permissions:
+      contents: write
 
     name: Release for ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
@@ -90,7 +92,6 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
-          token: ${{ secrets.RELEASE_GITHUB_TOKEN }}
           files: |
             **/*.exe
             **/*.tar.xz
