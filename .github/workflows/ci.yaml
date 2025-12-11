@@ -3,6 +3,7 @@ name: Build Fyne App (Linux, Windows, macOS)
 on:
   push:
     branches: [master]
+    tags: ["v*"]
   pull_request:
 
 jobs:
