@@ -6,6 +6,10 @@ on:
     tags: ["v*"]
   pull_request:
 
+defaults:
+  run:
+    working-directory: ./app
+
 jobs:
   build:
     name: Build for ${{ matrix.os }}
@@ -23,6 +27,7 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version: "1.24.6"
+          working-directory: ./app
 
       - name: Install fyne tool
         run: go install fyne.io/tools/cmd/fyne@v1.7.0
@@ -44,7 +49,6 @@ jobs:
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
-          cd app
           fyne package -os windows -icon assets\Icon.png -release
           dir
 
@@ -52,7 +56,6 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         shell: bash
         run: |
-          cd app
           fyne package -os linux -icon assets/Icon.png -release
           ls -la
 
@@ -60,7 +63,6 @@ jobs:
         if: matrix.os == 'macos-latest'
         shell: bash
         run: |
-          cd app
           fyne package -os darwin -icon assets/Icon.png -release
           hdiutil create -volname "PCSecurityCheck" -srcfolder "PCSecurityCheck.app" -ov -format UDZO "PCSecurityCheck.dmg"
           ls -la
