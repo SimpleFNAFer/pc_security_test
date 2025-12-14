@@ -64,7 +64,13 @@ jobs:
         shell: bash
         run: |
           fyne package -os darwin -icon assets/Icon.png -release
-          hdiutil create -volname "PCSecurityCheck" -srcfolder "PCSecurityCheck.app" -ov -format UDZO "PCSecurityCheck.dmg"
+          ls -la
+
+      - name: ZIP macOS .app
+        if: matrix.os == 'macos-latest'
+        shell: bash
+        run: |
+          zip -9 -X -r PCSecurityCheck.zip PCSecurityCheck.app
           ls -la
 
       - name: Upload artifact
@@ -74,7 +80,7 @@ jobs:
           path: |
             **/*.exe
             **/*.tar.xz
-            **/*.dmg
+            **/*.zip
 
   release:
     if: github.ref_type == 'tag'
@@ -101,4 +107,4 @@ jobs:
           files: |
             **/*.exe
             **/*.tar.xz
-            **/*.dmg
+            **/*.zip
